@@ -203,72 +203,20 @@ class ImThumb
 				unset($this->imageHandle);
 				$this->imageHandle = $canvas;
 				break;
-			case 1:		// outer-crop
+			case 1:		// outer-fill
 				// resize first to set scale as necessary
-				$ratio = $new_width / $width;
+				$final_height = $height * ($new_width / $width);
+				if ($final_height > $new_height) {
+					$ratio = $new_width / $width;
+				} else {
+					$ratio = $new_height / $height;
+				}
 				$tempW = $width * $ratio;
 				$tempH = $height * $ratio;
 
 				$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1);
 
-				// read alignment for crop operation
-				if (!$align || $align == 'c') {
-					$gravity = 'center';
-				} else if ($align == 'l') {
-					$gravity = 'west';
-				} else if ($align == 'r') {
-					$gravity = 'east';
-				} else {
-					$gravity = '';
-					if (strpos($align, 't') !== false) {
-						$gravity .= 'north';
-					}
-					if (strpos($align, 'b') !== false) {
-						$gravity .= 'south';
-					}
-					if (strpos($align, 'l') !== false) {
-						$gravity .= 'west';
-					}
-					if (strpos($align, 'r') !== false) {
-						$gravity .= 'east';
-					}
-				}
-
-				// :NOTE: ImageMagick gravity doesn't work with cropping. A shame.
-				$x = $y = 0;
-				switch ($gravity) {
-					case 'center':
-						$x = ($tempW - $new_width) / 2;
-						$y = ($tempH - $new_height) / 2;
-						break;
-					case 'northwest':
-						break;
-					case 'north':
-						$x = ($tempW - $new_width) / 2;
-						break;
-					case 'northeast':
-						$x = $tempW - $new_width;
-						break;
-					case 'west':
-						$y = ($tempH - $new_height) / 2;
-						break;
-					case 'east':
-						$x = $tempW - $new_width;
-						$y = ($tempH - $new_height) / 2;
-						break;
-					case 'southwest':
-						$x = 0;
-						$y = $tempH - $new_height;
-						break;
-					case 'south':
-						$x = ($tempW - $new_width) / 2;
-						$y = $tempH - $new_height;
-						break;
-					case 'southeast':
-						$x = $tempW - $new_width;
-						$y = $tempH - $new_height;
-						break;
-				}
+				list($x, $y) = $this->getCropCoords($align, $tempW, $tempH, $new_width, $new_height);
 
 				$this->imageHandle->cropImage($new_width, $new_height, $x, $y);
 				break;
@@ -278,6 +226,70 @@ class ImThumb
 		}
 
 		$this->compress();
+	}
+
+	protected function getCropCoords($align, $origW, $origH, $destW, $destH)
+	{
+		// read alignment for crop operation
+		if (!$align || $align == 'c') {
+			$gravity = 'center';
+		} else if ($align == 'l') {
+			$gravity = 'west';
+		} else if ($align == 'r') {
+			$gravity = 'east';
+		} else {
+			$gravity = '';
+			if (strpos($align, 't') !== false) {
+				$gravity .= 'north';
+			}
+			if (strpos($align, 'b') !== false) {
+				$gravity .= 'south';
+			}
+			if (strpos($align, 'l') !== false) {
+				$gravity .= 'west';
+			}
+			if (strpos($align, 'r') !== false) {
+				$gravity .= 'east';
+			}
+		}
+
+		// :NOTE: ImageMagick gravity doesn't work with cropping. A shame.
+		$x = $y = 0;
+		switch ($gravity) {
+			case 'center':
+				$x = ($origW - $destW) / 2;
+				$y = ($origH - $destH) / 2;
+				break;
+			case 'northwest':
+				break;
+			case 'north':
+				$x = ($origW - $destW) / 2;
+				break;
+			case 'northeast':
+				$x = $origW - $destW;
+				break;
+			case 'west':
+				$y = ($origH - $destH) / 2;
+				break;
+			case 'east':
+				$x = $origW - $destW;
+				$y = ($origH - $destH) / 2;
+				break;
+			case 'southwest':
+				$x = 0;
+				$y = $origH - $destH;
+				break;
+			case 'south':
+				$x = ($origW - $destW) / 2;
+				$y = $origH - $destH;
+				break;
+			case 'southeast':
+				$x = $origW - $destW;
+				$y = $origH - $destH;
+				break;
+		}
+
+		return array($x, $y);
 	}
 
 	protected function compress()
