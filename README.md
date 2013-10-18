@@ -15,7 +15,7 @@ I originally wrote this because I was attempting to optimise the quality of timt
 
 This software is licensed under an MIT open source license, see LICENSE.txt for details.
 
-&copy; 2013 Sam Pospischil (pospi at spadgos.com)
+&copy; 2013 Sam Pospischil (pospi at spadgos.com)<br />
 Initially developed at [Map Creative](http://mapcreative.com.au).
 
 ### TODO
