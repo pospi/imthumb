@@ -114,7 +114,10 @@ class ImThumb
 
 	public function __destruct()
 	{
-		$this->imageHandle->destroy();
+		if ($this->imageHandle) {
+			$this->imageHandle->destroy();
+			unset($this->imageHandle);
+		}
 	}
 
 	public function param($name, $val = null)
