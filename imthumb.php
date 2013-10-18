@@ -6,9 +6,6 @@
  *
  * General compatibility notes:
  * 	- Define the path to your base folder for serving images from with the constant 'IMTHUMB_BASEDIR'. This path should omit the trailing slash.
- * 	- Generation of thumbnails from external sources is ommitted. This just overcomplicates things
- * 	  and opens up security holes.. you shouldn't really be doing it anyway in most cases.
- * 	- Image filters are also ommitted for now.. they aren't often used.
  *
  * Installation of ImageMagick can be performed as follows:
  * 	RedHat-based systems:
