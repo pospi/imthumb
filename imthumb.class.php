@@ -156,7 +156,126 @@ class ImThumb
 
 	public function doResize()
 	{
-		$this->imageHandle->thumbnailImage($this->param('width'), $this->param('height'));
+		// get standard input properties
+		$new_width = abs($this->param('width'));
+		$new_height = abs($this->param('height'));
+		$zoom_crop = (int)$this->param('cropMode');
+		$quality = abs($this->param('quality'));
+		$align = $this->param('align');
+		$sharpen = (bool)$this->param('sharpen');
+
+		// ensure size limits can not be abused
+		$new_width = min($new_width, $this->param('maxw'));
+		$new_height = min($new_height, $this->param('maxh'));
+
+		// Get original width and height
+		$width = $this->imageHandle->getImageWidth();
+		$height = $this->imageHandle->getImageHeight();
+		$origin_x = 0;
+		$origin_y = 0;
+
+		// generate new w/h if not provided
+		if ($new_width && !$new_height) {
+			$new_height = floor($height * ($new_width / $width));
+		} else if ($new_height && !$new_width) {
+			$new_width = floor($width * ($new_height / $height));
+		}
+
+		// perform requested cropping
+		switch ($zoom_crop) {
+			case 3:		// inner-fit
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1, true);
+				break;
+			case 2:		// inner-fill
+				$canvas_color = $this->param('canvasColor');
+				$canvas_trans = (bool)$this->param('canvasTransparent') && false !== strpos($this->mimeType, 'png');
+
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1, true);
+
+				$canvas = new Imagick();
+				$canvas->newImage($new_width, $new_height, new ImagickPixel($canvas_trans ? 'transparent' : "#" . $canvas_color));
+				$canvas->setImageFormat(str_replace('image/', '', $this->mimeType));
+
+				$xOffset = ($new_width - $this->imageHandle->getImageWidth()) / 2;
+				$yOffset = ($new_height - $this->imageHandle->getImageHeight()) / 2;
+
+				$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, $xOffset, $yOffset);
+				unset($this->imageHandle);
+				$this->imageHandle = $canvas;
+				break;
+			case 1:		// outer-crop
+				// resize first to set scale as necessary
+				$ratio = $new_width / $width;
+				$tempW = $width * $ratio;
+				$tempH = $height * $ratio;
+
+				$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1);
+
+				// read alignment for crop operation
+				if (!$align || $align == 'c') {
+					$gravity = 'center';
+				} else if ($align == 'l') {
+					$gravity = 'west';
+				} else if ($align == 'r') {
+					$gravity = 'east';
+				} else {
+					$gravity = '';
+					if (strpos($align, 't') !== false) {
+						$gravity .= 'north';
+					}
+					if (strpos($align, 'b') !== false) {
+						$gravity .= 'south';
+					}
+					if (strpos($align, 'l') !== false) {
+						$gravity .= 'west';
+					}
+					if (strpos($align, 'r') !== false) {
+						$gravity .= 'east';
+					}
+				}
+
+				// :NOTE: ImageMagick gravity doesn't work with cropping. A shame.
+				$x = $y = 0;
+				switch ($gravity) {
+					case 'center':
+						$x = ($tempW - $new_width) / 2;
+						$y = ($tempH - $new_height) / 2;
+						break;
+					case 'northwest':
+						break;
+					case 'north':
+						$x = ($tempW - $new_width) / 2;
+						break;
+					case 'northeast':
+						$x = $tempW - $new_width;
+						break;
+					case 'west':
+						$y = ($tempH - $new_height) / 2;
+						break;
+					case 'east':
+						$x = $tempW - $new_width;
+						$y = ($tempH - $new_height) / 2;
+						break;
+					case 'southwest':
+						$x = 0;
+						$y = $tempH - $new_height;
+						break;
+					case 'south':
+						$x = ($tempW - $new_width) / 2;
+						$y = $tempH - $new_height;
+						break;
+					case 'southeast':
+						$x = $tempW - $new_width;
+						$y = $tempH - $new_height;
+						break;
+				}
+
+				$this->imageHandle->cropImage($new_width, $new_height, $x, $y);
+				break;
+			default:	// exact dimensions
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1);
+				break;
+		}
 
 		$this->compress();
 	}
