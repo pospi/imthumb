@@ -187,6 +187,9 @@ class ImThumb
 			$new_width = floor($width * ($new_height / $height));
 		}
 
+		// GIFs need to have some extra handling done
+		$isGIF = strpos($this->mimeType, 'gif') !== false;
+
 		// perform requested cropping
 		switch ($zoom_crop) {
 			case 3:		// inner-fit
@@ -229,6 +232,10 @@ class ImThumb
 			default:	// exact dimensions
 				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
 				break;
+		}
+
+		if ($isGIF) {
+			$this->imageHandle->setImagePage($new_width, $new_height, 0, 0);
 		}
 
 		$this->compress();
