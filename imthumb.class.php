@@ -377,7 +377,7 @@ class ImThumb
 	{
 		$cachePath = $this->getCachePath();
 
-		if (file_exists($cachePath)) {
+		if ($cachePath && file_exists($cachePath)) {
 			return file_get_contents($cachePath);
 		}
 
