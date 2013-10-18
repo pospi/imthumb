@@ -45,7 +45,7 @@ class ImThumb
 
 			'cache' => self::readConst('FILE_CACHE_ENABLED', true) ? self::readConst('FILE_CACHE_DIRECTORY', './cache') : false,
 			'cachePrefix' => self::readConst('FILE_CACHE_PREFIX', 'timthumb'),
-			'cacheSuffix' => self::readConst('FILE_CACHE_SUFFIX', '.timthumb'),
+			'cacheSuffix' => self::readConst('FILE_CACHE_SUFFIX', '.timthumb.txt'),
 			'cacheMaxAge' => self::readConst('FILE_CACHE_MAX_FILE_AGE', 86400),
 			'cacheCleanPeriod' => self::readConst('FILE_CACHE_TIME_BETWEEN_CLEANS', 86400),
 			'cacheSalt' => self::readConst('FILE_CACHE_NAME_SALT', 'IOLUJN!(Y&)(TEHlsio(&*Y3978fgsdBBu'),
@@ -420,7 +420,7 @@ class ImThumb
 			return false;
 		}
 
-		return $cacheDir . '/' . $this->param('cachePrefix') . md5($this->param('cacheSalt') . implode('', $this->params) . self::VERSION) . $this->param('cacheSuffix') . '.' . $this->imageExt;
+		return $cacheDir . '/' . $this->param('cachePrefix') . md5($this->param('cacheSalt') . implode('', $this->params) . self::VERSION) . $this->param('cacheSuffix');
 	}
 
 	//--------------------------------------------------------------------------
