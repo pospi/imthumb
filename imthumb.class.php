@@ -104,6 +104,7 @@ class ImThumb
 		if ($src) {
 			if ($this->param('cache') && file_exists($this->getCachePath())) {
 				$this->hasCache = true;
+				$this->loadImageMeta($src);
 			} else {
 				$this->loadImage($src);
 				$this->doResize();
@@ -130,6 +131,12 @@ class ImThumb
 
 	public function loadImage($src)
 	{
+		$this->loadImageMeta($src);
+		$this->imageHandle = new Imagick($src);
+	}
+
+	protected function loadImageMeta($src)
+	{
 		$sData = getimagesize($src);
 		$this->imageType = $sData[2];
 
@@ -142,8 +149,6 @@ class ImThumb
 		}
 
 		$this->imageExt = substr($src, strrpos($src, '.') + 1);
-
-		$this->imageHandle = new Imagick($src);
 	}
 
 	//--------------------------------------------------------------------------
