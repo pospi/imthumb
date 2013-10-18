@@ -187,13 +187,13 @@ class ImThumb
 		// perform requested cropping
 		switch ($zoom_crop) {
 			case 3:		// inner-fit
-				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1, true);
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
 				break;
 			case 2:		// inner-fill
 				$canvas_color = $this->param('canvasColor');
 				$canvas_trans = (bool)$this->param('canvasTransparent') && false !== strpos($this->mimeType, 'png');
 
-				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1, true);
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
 
 				$canvas = new Imagick();
 				$canvas->newImage($new_width, $new_height, new ImagickPixel($canvas_trans ? 'transparent' : "#" . $canvas_color));
@@ -217,14 +217,14 @@ class ImThumb
 				$tempW = $width * $ratio;
 				$tempH = $height * $ratio;
 
-				$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1);
+				$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
 
 				list($x, $y) = $this->getCropCoords($align, $tempW, $tempH, $new_width, $new_height);
 
 				$this->imageHandle->cropImage($new_width, $new_height, $x, $y);
 				break;
 			default:	// exact dimensions
-				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.1 : 1);
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
 				break;
 		}
 
