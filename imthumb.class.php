@@ -81,6 +81,8 @@ class ImThumb
 	private $mimeType;
 	private $imageExt;
 
+	private $hasCache = false;
+
 	public function __construct(Array $params = null)
 	{
 		if (!class_exists('Imagick')) {
@@ -100,8 +102,12 @@ class ImThumb
 		}
 
 		if ($src) {
-			$this->loadImage($src);
-			$this->doResize();
+			if ($this->param('cache') && file_exists($this->getCachePath())) {
+				$this->hasCache = true;
+			} else {
+				$this->loadImage($src);
+				$this->doResize();
+			}
 		}
 	}
 
@@ -146,6 +152,8 @@ class ImThumb
 	public function doResize()
 	{
 		$this->imageHandle->thumbnailImage($this->param('width'), $this->param('height'));
+
+		$this->compress();
 	}
 
 	protected function compress()
@@ -201,7 +209,6 @@ class ImThumb
 
 	public function display()
 	{
-		$this->compress();
 		$this->sendHeaders();
 
 		echo $this->getImage();
@@ -234,13 +241,12 @@ class ImThumb
 
 	public function writeToCache()
 	{
-		if (!$this->param('cache')) {
+		if ($this->hasCache || !$this->param('cache')) {
 			return;
 		}
 
 		$tempfile = tempnam($this->param('cache'), 'imthumb_tmpimg_');
 
-		$this->compress();
 		if (!$this->imageHandle->writeImage($tempfile)) {
 			$this->critical("Could not write image to temporary file");
 		}
