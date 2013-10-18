@@ -110,6 +110,9 @@ class ImThumb
 				$this->doResize();
 			}
 		}
+
+		$this->initCacheDir();
+		$this->checkExpiredCaches();
 	}
 
 	public function __destruct()
@@ -378,6 +381,18 @@ class ImThumb
 	//--------------------------------------------------------------------------
 	// Caching
 
+	public function initCacheDir()
+	{
+		$cacheDir = $this->param('cache');
+		if (!$cacheDir) {
+			return;
+		}
+
+		if (!touch($cacheDir . '/index.html')) {
+			$this->critical("Could not create the index.html file - to fix this create an empty file named index.html file in the cache directory.");
+		}
+	}
+
 	public function writeToCache()
 	{
 		if ($this->hasCache || !$this->param('cache')) {
@@ -410,6 +425,47 @@ class ImThumb
 			@unlink($tempfile);
 			$this->critical("Could not get a lock for writing");
 		}
+	}
+
+	public function checkExpiredCaches()
+	{
+		$cacheDir = $this->param('cache');
+		$cacheExpiry = $this->param('cacheCleanPeriod');
+		if (!$cacheDir || !$cacheExpiry || $cacheExpiry < 0) {
+			return;
+		}
+
+		$lastCleanFile = $cacheDir . '/timthumb_cacheLastCleanTime.touch';
+
+		// If this is a new installation we need to create the file
+		if (!is_file($lastCleanFile)) {
+			if (!touch($lastCleanFile)) {
+				$this->critical("Could not create cache clean timestamp file.");
+			}
+		}
+
+		// check for last auto-purge time
+		if (@filemtime($lastCleanFile) < (time() - $cacheExpiry)) {
+			// :NOTE: (from timthumb) Very slight race condition here, but worst case we'll have 2 or 3 servers cleaning the cache simultaneously once a day.
+			if (!touch($lastCleanFile)) {
+				$this->error("Could not create cache clean timestamp file.");
+			}
+
+			$maxAge = $this->param('cacheMaxAge');
+			$files = glob($this->cacheDirectory . '/*' . $this->param('cacheSuffix'));
+
+			if ($files) {
+				$timeAgo = time() - $maxAge;
+				foreach ($files as $file) {
+					if (@filemtime($file) < $timeAgo) {
+						@unlink($file);
+					}
+				}
+			}
+			return true;
+		}
+
+		return false;
 	}
 
 	private function getCachePath()
