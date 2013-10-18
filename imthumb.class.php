@@ -138,7 +138,17 @@ class ImThumb
 	public function loadImage($src)
 	{
 		$this->loadImageMeta($src);
-		$this->imageHandle = new Imagick($src);
+		$this->imageHandle = new Imagick();
+
+		if ($this->mimeType == 'image/jpg') {
+			$this->imageHandle->setFormat('jpg');
+		} else if ($this->mimeType == 'image/gif') {
+			$this->imageHandle->setFormat('gif');
+		} else if ($this->mimeType == 'image/png') {
+			$this->imageHandle->setFormat('png');
+		}
+
+		$this->imageHandle->readImage($src);
 	}
 
 	protected function loadImageMeta($src)
@@ -146,11 +156,11 @@ class ImThumb
 		$sData = getimagesize($src);
 		$this->imageType = $sData[2];
 
-		$this->mimeType = $sData['mime'];
+		$this->mimeType = strtolower($sData['mime']);
 		if(!preg_match('/^image\//i', $this->mimeType)) {
 			$this->mimeType = 'image/' . $this->mimeType;
 		}
-		if (strtolower($this->mimeType) == 'image/jpg') {
+		if ($this->mimeType == 'image/jpg') {
 			$this->mimeType = 'image/jpeg';
 		}
 
