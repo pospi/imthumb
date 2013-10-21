@@ -22,8 +22,8 @@ class ImThumb
 		// build params for the class
 		$params = array(
 			'src' => self::readParam('src'),
-			'width' => self::readParam('w', 100),
-			'height' => self::readParam('h', 100),
+			'width' => self::readParam('w', null),
+			'height' => self::readParam('h', null),
 			'quality' => self::readParam('q', self::readConst('DEFAULT_Q', 90)),
 			'align' => self::readParam('a', 'c'),
 			'cropMode' => self::readParam('zc', self::readConst('DEFAULT_ZC', 1)),
