@@ -11,6 +11,11 @@ class ImThumb
 {
 	const VERSION = 1;
 
+	const ERR_SERVER_CONFIG = 1;	// exception codes
+	const ERR_SRC_IMAGE = 2;
+	const ERR_OUTPUTTING = 3;
+	const ERR_CACHE = 4;
+
 	public static $HAS_MBSTRING;	// used for reliable image length determination. Initialised below class def'n.
 	public static $MBSTRING_SHADOW;
 
@@ -54,7 +59,16 @@ class ImThumb
 		);
 
 		// create image handler
-		$handler = new ImThumb($params);
+		try {
+			$handler = new ImThumb($params);
+		} catch (Exception $e) {
+			if ($e->getCode() == self::ERR_SRC_IMAGE) {
+				// log the querystring passed in addition to regular message
+				$handler->critical($e->getMessage() . ' Source querystring: ' . $_SERVER['QUERY_STRING'], self::ERR_SRC_IMAGE);
+			} else {
+				throw $e;
+			}
+		}
 
 		// process request steps in order
 		$handler->writeToCache();
@@ -86,7 +100,7 @@ class ImThumb
 	public function __construct(Array $params = null)
 	{
 		if (!class_exists('Imagick')) {
-			$this->critical("Could not load ImThumb: ImageMagick is not installed. Please contact your webhost and ask them to install the ImageMagick library");
+			$this->critical("Could not load ImThumb: ImageMagick is not installed. Please contact your webhost and ask them to install the ImageMagick library", self::ERR_SERVER_CONFIG);
 		}
 
 		if (defined('MEMORY_LIMIT') && MEMORY_LIMIT) {
@@ -112,7 +126,7 @@ class ImThumb
 		}
 
 		if (!$src) {
-			$this->critical("No image path specified for thumbnail generation");
+			$this->critical("No image path specified for thumbnail generation", self::ERR_SRC_IMAGE);
 		}
 
 		$this->initCacheDir();
@@ -342,7 +356,7 @@ class ImThumb
 	{
 		// check we can send these first
 		if (headers_sent()) {
-			$this->critical("Could not set image headers, output already started");
+			$this->critical("Could not set image headers, output already started", self::ERR_OUTPUTTING);
 		}
 
 		// avoid timezone setting warnings
@@ -410,7 +424,7 @@ class ImThumb
 		}
 
 		if (!touch($cacheDir . '/index.html')) {
-			$this->critical("Could not create the index.html file - to fix this create an empty file named index.html file in the cache directory.");
+			$this->critical("Could not create the index.html file - to fix this create an empty file named index.html file in the cache directory.", self::ERR_CACHE);
 		}
 	}
 
@@ -423,7 +437,7 @@ class ImThumb
 		$tempfile = tempnam($this->param('cache'), 'imthumb_tmpimg_');
 
 		if (!$this->imageHandle->writeImage($tempfile)) {
-			$this->critical("Could not write image to temporary file");
+			$this->critical("Could not write image to temporary file", self::ERR_CACHE);
 		}
 
 		$cacheFile = $this->getCachePath();
@@ -431,7 +445,7 @@ class ImThumb
 
 		$fh = fopen($lockFile, 'w');
 		if (!$fh) {
-			$this->critical("Could not open the lockfile for writing an image");
+			$this->critical("Could not open the lockfile for writing an image", self::ERR_CACHE);
 		}
 
 		if (flock($fh, LOCK_EX)) {
@@ -444,7 +458,7 @@ class ImThumb
 			fclose($fh);
 			@unlink($lockFile);
 			@unlink($tempfile);
-			$this->critical("Could not get a lock for writing");
+			$this->critical("Could not get a lock for writing", self::ERR_CACHE);
 		}
 	}
 
@@ -461,7 +475,7 @@ class ImThumb
 		// If this is a new installation we need to create the file
 		if (!is_file($lastCleanFile)) {
 			if (!touch($lastCleanFile)) {
-				$this->critical("Could not create cache clean timestamp file.");
+				$this->critical("Could not create cache clean timestamp file.", self::ERR_CACHE);
 			}
 		}
 
@@ -503,9 +517,9 @@ class ImThumb
 	//--------------------------------------------------------------------------
 	// Error handling
 
-	protected function critical($string)
+	protected function critical($string, $code = 0)
 	{
-		throw new Exception('ImThumb: ' . $string);
+		throw new Exception('ImThumb: ' . $string, $code);
 	}
 }
 
