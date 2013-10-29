@@ -111,6 +111,10 @@ class ImThumb
 			}
 		}
 
+		if (!$src) {
+			$this->critical("No image path specified for thumbnail generation");
+		}
+
 		$this->initCacheDir();
 		$this->checkExpiredCaches();
 	}
@@ -501,7 +505,7 @@ class ImThumb
 
 	protected function critical($string)
 	{
-		throw new Exception($string);
+		throw new Exception('ImThumb: ' . $string);
 	}
 }
 
