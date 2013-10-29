@@ -64,7 +64,7 @@ class ImThumb
 		} catch (Exception $e) {
 			if ($e->getCode() == self::ERR_SRC_IMAGE) {
 				// log the querystring passed in addition to regular message
-				$handler->critical($e->getMessage() . ' Source querystring: ' . $_SERVER['QUERY_STRING'], self::ERR_SRC_IMAGE);
+				throw new Exception($e->getMessage() . ' Source querystring: ' . $_SERVER['QUERY_STRING'], self::ERR_SRC_IMAGE);
 			} else {
 				throw $e;
 			}
