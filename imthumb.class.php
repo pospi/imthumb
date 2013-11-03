@@ -115,6 +115,10 @@ class ImThumb
 			$src = $this->param('baseDir') . '/' . $src;
 		}
 
+		if (!$this->param('width') && !$this->param('height')) {
+			$this->params['width'] = $this->params['height'] = 100;
+		}
+
 		if ($src) {
 			if ($this->param('cache') && file_exists($this->getCachePath())) {
 				$this->hasCache = true;
