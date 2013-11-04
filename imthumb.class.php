@@ -349,7 +349,7 @@ class ImThumb
 			$this->imageHandle->setImageCompression(Imagick::COMPRESSION_ZIP);
 		}
 
-		$this->imageHandle->setImageCompressionQuality($this->param('quality'));
+		$this->imageHandle->setImageCompressionQuality((double)$this->param('quality'));
 		$this->imageHandle->stripImage();
 	}
 
