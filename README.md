@@ -11,6 +11,20 @@ I originally wrote this because I was attempting to optimise the quality of timt
 * Drop-in replacement, uses the same configuration files as timthumb does.
 * Self-contained class file and accessible image handling API, rather than a messy script designed to run in its own environment.
 
+#### Additional Functionality
+
+The following additional features are provided by ImThumb in addition to baseline timthumb functionality:
+
+* Progressive JPEG encoding for better image load experience. Can be disabled by passing `p=0` to the script.
+* GIF images can be resized whilst retaining their transparent backgrounds.
+* Better compression of generated images and smaller filesizes.
+
+#### Incompatibilities
+
+The following features work differently or are otherwise compatible with timthumb. You might want to stick to it if you depend on any of these things:
+
+* Progressive JPEGs are saved by default unless the parameter `p` is explicitly set to `0`.
+
 ### License and Credits
 
 This software is licensed under an MIT open source license, see LICENSE.txt for details.
