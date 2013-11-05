@@ -40,6 +40,8 @@ class ImThumb
 			'errorImg' => self::readConst('ERROR_IMAGE'),
 			'pngTransparency' => self::readConst('PNG_IS_TRANSPARENT', false),
 
+			'jpgProgressive' => self::readParam('p', self::readConst('DEFAULT_PROGRESSIVE_JPEG', 1)),
+
 			'maxw' => self::readConst('MAX_WIDTH', 1500),
 			'maxh' => self::readConst('MAX_HEIGHT', 1500),
 
@@ -221,6 +223,8 @@ class ImThumb
 
 		// GIFs need to have some extra handling done
 		$isGIF = strpos($this->mimeType, 'gif') !== false;
+		$isJPEG = strpos($this->mimeType, 'jpeg') !== false;
+		$isPNG = strpos($this->mimeType, 'png') !== false;
 
 		// perform requested cropping
 		switch ($zoom_crop) {
@@ -229,7 +233,7 @@ class ImThumb
 				break;
 			case 2:		// inner-fill
 				$canvas_color = $this->param('canvasColor');
-				$canvas_trans = (bool)$this->param('canvasTransparent') && false !== strpos($this->mimeType, 'png');
+				$canvas_trans = (bool)$this->param('canvasTransparent') && ($isPNG || $isGIF);
 
 				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
 
@@ -266,8 +270,14 @@ class ImThumb
 				break;
 		}
 
+		// gifs need to have the canvas size explicitly set
 		if ($isGIF) {
 			$this->imageHandle->setImagePage($new_width, $new_height, 0, 0);
+		}
+
+		// set progressive JPEG if desired
+		if ($isJPEG && $this->param('jpgProgressive')) {
+			$this->imageHandle->setInterlaceScheme(Imagick::INTERLACE_PLANE);
 		}
 
 		$this->compress();
