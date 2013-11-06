@@ -15,6 +15,7 @@ class ImThumb
 	const ERR_SRC_IMAGE = 2;
 	const ERR_OUTPUTTING = 3;
 	const ERR_CACHE = 4;
+	const ERR_FILTER = 5;
 
 	public static $HAS_MBSTRING;	// used for reliable image length determination. Initialised below class def'n.
 	public static $MBSTRING_SHADOW;
@@ -35,6 +36,8 @@ class ImThumb
 			'sharpen' => self::readParam('s', self::readConst('DEFAULT_S', 0)),
 			'canvasColor' => self::readParam('cc', self::readConst('DEFAULT_CC', 'ffffff')),
 			'canvasTransparent' => (bool)self::readParam('ct', true),
+
+			'filters' => self::readParam('f', self::readConst('DEFAULT_F', '')),
 
 			'fallbackImg' => self::readConst('NOT_FOUND_IMAGE'),
 			'errorImg' => self::readConst('ERROR_IMAGE'),
@@ -270,7 +273,28 @@ class ImThumb
 				break;
 		}
 
-		// gifs need to have the canvas size explicitly set
+		// process any configured image filters
+		if ($this->param('filters')) {
+			require_once(dirname(__FILE__) . '/imthumb-filters.php');
+
+			$filterHandler = new ImThumbFilters($this->imageHandle);
+
+			$filters = explode('|', $this->param('filters'));
+			foreach ($filters as &$filterArgs) {
+				$filterArgs = explode(',', $filterArgs);
+				$filterName = trim(array_shift($filterArgs));
+
+				if (is_numeric($filterName)) {
+					// process TimThumb filters
+					$filterHandler->timthumbFilter($filterName, $filterArgs);
+				} else {
+					// process Imagick filters
+					call_user_func_array(array($filterHandler, $filterName), $filterArgs);
+				}
+			}
+		}
+
+		// GIFs need final page dimensions processed or they retain original image canvas size
 		if ($isGIF) {
 			$this->imageHandle->setImagePage($new_width, $new_height, 0, 0);
 		}
