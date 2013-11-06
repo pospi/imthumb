@@ -15,6 +15,7 @@ I originally wrote this because I was attempting to optimise the quality of timt
 
 The following additional features are provided by ImThumb in addition to baseline timthumb functionality:
 
+* Extended image filters from the ImageMagick library. For a full list, see [this manpage](http://www.php.net/manual/en/class.imagick.php#imagick.imagick.methods) under the heading "*Image effects*".
 * Progressive JPEG encoding for better image load experience. Can be disabled by passing `p=0` to the script.
 * GIF images can be resized whilst retaining their transparent backgrounds.
 * Better compression of generated images and smaller filesizes.
@@ -36,5 +37,4 @@ Initially developed at [Map Creative](http://mapcreative.com.au).
 
 * Add support for scaling animated gifs whilst retaining animation
 * Support for ImageMagick 3 and under in 'inner fit' and 'inner fill' crop modes
-* Image filters
 * Extension for processing external images
