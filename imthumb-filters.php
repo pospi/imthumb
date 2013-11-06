@@ -29,9 +29,6 @@ class ImThumbFilters
 
 	// image filter parameter lists from ImageMagick
 	private static $IMAGE_FILTER_PARAMS = array(
-		// not listed under
-		'contrastImage'					=> 0,
-
 		'adaptiveBlurImage'				=> 0,
 		'adaptiveResizeImage'			=> 0,
 		'adaptiveSharpenImage'			=> 0,
