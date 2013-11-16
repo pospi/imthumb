@@ -55,9 +55,9 @@ abstract class ImthumbRequestHandler
 		try {
 			$handler = new ImThumb($params);
 		} catch (Exception $e) {
-			if ($e->getCode() == self::ERR_SRC_IMAGE) {
+			if ($e->getCode() == ImThumb::ERR_SRC_IMAGE) {
 				// log the querystring passed in addition to regular message
-				throw new Exception($e->getMessage() . ' Source querystring: ' . $_SERVER['QUERY_STRING'], self::ERR_SRC_IMAGE);
+				throw new Exception($e->getMessage() . ' Source querystring: ' . $_SERVER['QUERY_STRING'], ImThumb::ERR_SRC_IMAGE);
 			} else {
 				throw $e;
 			}
