@@ -53,7 +53,7 @@ class ImThumb
 			'maxSize' => self::readConst('MAX_FILE_SIZE', 10485760),
 			'externalAllowed' => !self::readConst('BLOCK_EXTERNAL_LEECHERS', false),
 
-			'baseDir' => self::readConst('IMTHUMB_BASEDIR'),
+			'baseDir' => self::readConst('IMTHUMB_BASEDIR', self::readConst('LOCAL_FILE_BASE_DIRECTORY')),	// :NOTE: IMTHUMB_BASEDIR maintains compatibility with early versions of ImThumb
 
 			'cache' => self::readConst('FILE_CACHE_ENABLED', true) ? self::readConst('FILE_CACHE_DIRECTORY', './cache') : false,
 			'cachePrefix' => self::readConst('FILE_CACHE_PREFIX', 'timthumb'),
