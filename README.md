@@ -22,7 +22,7 @@ The following additional features are provided by ImThumb in addition to baselin
 
 #### Incompatibilities
 
-The following features work differently or are otherwise compatible with timthumb. You might want to stick to it if you depend on any of these things:
+The following features work differently or are otherwise incompatible with timthumb. You might want to stick to it if you depend on any of these things:
 
 * Progressive JPEGs are saved by default unless the parameter `p` is explicitly set to `0`.
 
@@ -35,6 +35,8 @@ Initially developed at [Map Creative](http://mapcreative.com.au).
 
 ### TODO
 
+* Session limiting for thrashing
 * Add support for scaling animated gifs whilst retaining animation
-* Support for ImageMagick 3 and under in 'inner fit' and 'inner fill' crop modes
 * Extension for processing external images
+* Addon for webpage rendering
+* Support for ImageMagick 3 and under in 'inner fit' and 'inner fill' crop modes
