@@ -100,6 +100,8 @@ class ImThumb
 	private $mimeType;
 	private $imageExt;
 
+	private $isValidSrc = true;
+
 	private $hasCache = false;
 
 	public function __construct(Array $params = null)
@@ -167,6 +169,17 @@ class ImThumb
 		$this->loadImageMeta($src);
 		$this->imageHandle = new Imagick();
 
+		if (!$this->isValidSrc) {
+			// create a dummy image first, otherwise further calls will fail if no fallback image specified
+			$this->imageHandle->newImage(1, 1, new ImagickPixel('#FF0000'));
+
+			if ($fallback = $this->param('fallbackImg')) {
+				$this->imageHandle->readImage($fallback);
+			}
+		} else {
+			$this->imageHandle->readImage($src);
+		}
+
 		if ($this->mimeType == 'image/jpg') {
 			$this->imageHandle->setFormat('jpg');
 		} else if ($this->mimeType == 'image/gif') {
@@ -174,13 +187,16 @@ class ImThumb
 		} else if ($this->mimeType == 'image/png') {
 			$this->imageHandle->setFormat('png');
 		}
-
-		$this->imageHandle->readImage($src);
 	}
 
 	protected function loadImageMeta($src)
 	{
-		$sData = getimagesize($src);
+		$sData = @getimagesize($src);
+		if (!$sData) {
+			$this->isValidSrc = false;
+			return;
+		}
+
 		$this->imageType = $sData[2];
 
 		$this->mimeType = strtolower($sData['mime']);
@@ -212,8 +228,8 @@ class ImThumb
 		$new_height = min($new_height, $this->param('maxh'));
 
 		// Get original width and height
-		$width = $this->imageHandle->getImageWidth();
-		$height = $this->imageHandle->getImageHeight();
+		$width = $this->imageHandle->valid() ? $this->imageHandle->getImageWidth() : 0;
+		$height = $this->imageHandle->valid() ? $this->imageHandle->getImageHeight() : 0;
 		$origin_x = 0;
 		$origin_y = 0;
 
@@ -405,6 +421,9 @@ class ImThumb
 		// get image size. Have to workaround bugs in Imagick that return 0 for size by counting ourselves.
 		$byteSize = $this->getImageSize();
 
+		if (!$this->isValidSrc) {
+			header('HTTP/1.0 404 Not Found');
+		}
 		header('Content-Type: ' . $this->mimeType);
 		header('Accept-Ranges: none');
 		header('Last-Modified: ' . $modifiedDate);
@@ -437,7 +456,11 @@ class ImThumb
 			return file_get_contents($cachePath);
 		}
 
-		return $this->imageHandle->getImageBlob();
+		try {
+			return $this->imageHandle->getImageBlob();
+		} catch (ImagickException $e) {
+			return false;
+		}
 	}
 
 	public function getImageSize()
