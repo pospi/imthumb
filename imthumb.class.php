@@ -20,6 +20,8 @@ class ImThumb
 	public static $HAS_MBSTRING;	// used for reliable image length determination. Initialised below class def'n.
 	public static $MBSTRING_SHADOW;
 
+	public static $DOCROOT;
+
 	//--------------------------------------------------------------------------
 	// Request handler
 
@@ -117,10 +119,7 @@ class ImThumb
 		ksort($params);	// :NOTE: order the parameters to get consistent cache filenames, as this is factored into filename hashes
 		$this->params = $params;
 
-		$src = $this->param('src');
-		if ($src && $this->param('baseDir')) {
-			$src = $this->param('baseDir') . '/' . $src;
-		}
+		$src = $this->getRealImagePath();
 
 		if (!$this->param('width') && !$this->param('height')) {
 			$this->params['width'] = $this->params['height'] = 100;
@@ -134,9 +133,7 @@ class ImThumb
 				$this->loadImage($src);
 				$this->doResize();
 			}
-		}
-
-		if (!$src) {
+		} else {
 			$this->critical("No image path specified for thumbnail generation", self::ERR_SRC_IMAGE);
 		}
 
@@ -208,6 +205,52 @@ class ImThumb
 		}
 
 		$this->imageExt = substr($src, strrpos($src, '.') + 1);
+	}
+
+	private function getRealImagePath()
+	{
+		$src = $this->param('src');
+		if (!$src) {
+			return false;
+		}
+
+		if (preg_match('@^https?://@i', $src)) {
+			// :TODO:
+			throw new Exception('External images not implemented yet');
+		}
+		if ($this->param('baseDir')) {
+			return $this->param('baseDir') . '/' . $src;
+		}
+		return self::getDocRoot() . $src;
+	}
+
+	// mostly taken from TimThumb
+	public static function getDocRoot()
+	{
+		if (isset(self::$DOCROOT)) {
+			return self::$DOCROOT;
+		}
+
+		$docRoot = @$_SERVER['DOCUMENT_ROOT'];
+		if (!isset($docRoot)) {
+			if (isset($_SERVER['SCRIPT_FILENAME'])) {
+				$docRoot = str_replace('\\', '/', substr($_SERVER['SCRIPT_FILENAME'], 0, 0 - strlen($_SERVER['PHP_SELF'])));
+			}
+		}
+		if (!isset($docRoot)) {
+			if (isset($_SERVER['PATH_TRANSLATED'])) {
+				$docRoot = str_replace('\\', '/', substr(str_replace('\\\\', '\\', $_SERVER['PATH_TRANSLATED']), 0, 0 - strlen($_SERVER['PHP_SELF'])));
+			}
+		}
+		if ($docRoot && $_SERVER['DOCUMENT_ROOT'] != '/') {
+			$docRoot = preg_replace('/\/$/', '', $docRoot);
+		}
+
+		$docRoot .= '/';
+
+		self::$DOCROOT = $docRoot;
+
+		return $docRoot;
 	}
 
 	//--------------------------------------------------------------------------
