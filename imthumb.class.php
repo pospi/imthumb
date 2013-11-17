@@ -400,22 +400,23 @@ class ImThumb
 			header('HTTP/1.0 404 Not Found');
 		} else if ($this->hasBrowserCache()) {
 			header('HTTP/1.0 304 Not Modified');
-			return;
-		}
-		header('Content-Type: ' . $this->mimeType);
-		header('Accept-Ranges: none');
-		header('Last-Modified: ' . $modifiedDate);
-		header('Content-Length: ' . $byteSize);
-
-		if (!$this->param('browserCache')) {
-			header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-			header("Pragma: no-cache");
-			header('Expires: ' . gmdate('D, d M Y H:i:s', time()));
 		} else {
-			$maxAge = $this->param('browserCacheMaxAge');
-			$expiryDate = gmdate('D, d M Y H:i:s', strtotime('now +' . $maxAge . ' seconds')) . ' GMT';
-			header('Cache-Control: max-age=' . $maxAge . ', must-revalidate');
-			header('Expires: ' . $expiryDate);
+			header('HTTP/1.0 200 OK');
+			header('Content-Type: ' . $this->mimeType);
+			header('Accept-Ranges: none');
+			header('Last-Modified: ' . $modifiedDate);
+			header('Content-Length: ' . $byteSize);
+
+			if (!$this->param('browserCache')) {
+				header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+				header("Pragma: no-cache");
+				header('Expires: ' . gmdate('D, d M Y H:i:s', time()));
+			} else {
+				$maxAge = $this->param('browserCacheMaxAge');
+				$expiryDate = gmdate('D, d M Y H:i:s', strtotime('now +' . $maxAge . ' seconds')) . ' GMT';
+				header('Cache-Control: max-age=' . $maxAge . ', must-revalidate');
+				header('Expires: ' . $expiryDate);
+			}
 		}
 
 		// informational headers
