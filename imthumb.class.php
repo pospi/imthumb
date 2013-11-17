@@ -423,9 +423,9 @@ class ImThumb
 		if (!$this->param('silent')) {
 			header('X-Generator: ImThumb v' . self::VERSION);
 			if ($this->hasCache) {
-				header('X-Cache: HIT');
+				header('X-Img-Cache: HIT');
 			} else {
-				header('X-Cache: MISS');
+				header('X-Img-Cache: MISS');
 			}
 			if ($this->param('debug')) {
 				header('X-Generated-In: ' . number_format(microtime(true) - $this->startTime, 6) . 's');
