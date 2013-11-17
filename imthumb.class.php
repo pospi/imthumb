@@ -477,13 +477,21 @@ class ImThumb
 		}
 	}
 
-	public function hasBrowserCache()
+	public function hasBrowserCache($modifiedSince = null)
 	{
-		if ($this->mtime <= 0 || !$this->param('browserCache') || empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+		if (!$modifiedSince) {
+			$modifiedSince = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? $_SERVER['HTTP_IF_MODIFIED_SINCE'] : false;
+		}
+
+		if ($this->mtime <= 0 || !$this->param('browserCache') || empty($modifiedSince)) {
 			return false;
 		}
 
-		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $this->mtime) {
+		if (!is_numeric($modifiedSince)) {
+			$modifiedSince = strtotime($modifiedSince);
+		}
+
+		if ($modifiedSince < $this->mtime) {
 			return false;
 		}
 		return true;
