@@ -54,6 +54,9 @@ abstract class ImthumbRequestHandler
 			'debug' => self::readConst('SHOW_DEBUG_STATS', false),		// show timing and resource usage statistics in HTTP headers
 		);
 
+		// set timezone if unset to avoid warnings
+		date_default_timezone_set(@date_default_timezone_get());
+
 		// create image handler
 		try {
 			$handler = new ImThumb($params);
