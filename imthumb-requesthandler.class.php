@@ -49,6 +49,9 @@ abstract class ImthumbRequestHandler
 			'cacheSalt' => self::readConst('FILE_CACHE_NAME_SALT', 'IOLUJN!(Y&)(TEHlsio(&*Y3978fgsdBBu'),
 			'browserCache' => !self::readConst('BROWSER_CACHE_DISABLE', false),
 			'browserCacheMaxAge' => self::readConst('BROWSER_CACHE_MAX_AGE', 86400),
+
+			'silent' => self::readConst('SKIP_IMTHUMB_HEADERS', false),	// by default we send generator and timing stats in response headers
+			'debug' => self::readConst('SHOW_DEBUG_STATS', false),		// show timing and resource usage statistics in HTTP headers
 		);
 
 		// create image handler

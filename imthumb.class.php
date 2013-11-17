@@ -9,7 +9,7 @@
 
 class ImThumb
 {
-	const VERSION = 1;
+	const VERSION = 1.1;
 
 	const ERR_SERVER_CONFIG = 1;	// exception codes
 	const ERR_SRC_IMAGE = 2;
@@ -34,11 +34,16 @@ class ImThumb
 
 	private $hasCache = false;
 
+	private $startTime;	// stats
+	private $startCPU;
+
 	public function __construct(Array $params = null)
 	{
 		if (!class_exists('Imagick')) {
 			$this->critical("Could not load ImThumb: ImageMagick is not installed. Please contact your webhost and ask them to install the ImageMagick library", self::ERR_SERVER_CONFIG);
 		}
+
+		$this->startTime = microtime(true);
 
 		if (defined('MEMORY_LIMIT') && MEMORY_LIMIT) {
 			ini_set('memory_limit', MEMORY_LIMIT);
@@ -46,6 +51,12 @@ class ImThumb
 
 		ksort($params);	// :NOTE: order the parameters to get consistent cache filenames, as this is factored into filename hashes
 		$this->params = $params;
+
+		// store initial CPU stats if we are debugging
+		if ($this->param('debug')) {
+			$data = getrusage();
+			$this->startCPU = array((double)($data['ru_utime.tv_sec'] + $data['ru_utime.tv_usec'] / 1000000), (double)($data['ru_stime.tv_sec'] + $data['ru_stime.tv_usec'] / 1000000));
+		}
 
 		$src = $this->getRealImagePath();
 
@@ -382,6 +393,27 @@ class ImThumb
 			$expiryDate = gmdate('D, d M Y H:i:s', strtotime('now +' . $maxAge . ' seconds')) . ' GMT';
 			header('Cache-Control: max-age=' . $maxAge . ', must-revalidate');
 			header('Expires: ' . $expiryDate);
+		}
+
+		// informational headers
+		if (!$this->param('silent')) {
+			header('X-Generator: ImThumb v' . self::VERSION);
+			if ($this->hasCache) {
+				header('X-Cache: HIT');
+			} else {
+				header('X-Cache: MISS');
+			}
+			if ($this->param('debug')) {
+				header('X-Generated-In: ' . number_format(microtime(true) - $this->startTime, 6) . 's');
+				header('X-Memory-Peak: ' . number_format((memory_get_peak_usage() / 1024), 3, '.', '') . 'KB');
+
+				$data = getrusage();
+				$memusage = array((double)($data['ru_utime.tv_sec'] + $data['ru_utime.tv_usec'] / 1000000), (double)($data['ru_stime.tv_sec'] + $data['ru_stime.tv_usec'] / 1000000));
+				header('X-CPU-Utilisation:'
+					.  ' Usr ' . number_format($memusage[0] - $this->startCPU[0], 6)
+					. ', Sys ' . number_format($memusage[1] - $this->startCPU[1], 6)
+					. '; Base ' . number_format($this->startCPU[0], 6) . ', ' . number_format($this->startCPU[1], 6));
+			}
 		}
 	}
 
