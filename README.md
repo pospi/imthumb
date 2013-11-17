@@ -25,6 +25,7 @@ The following additional features are provided by ImThumb in addition to baselin
 The following features work differently or are otherwise incompatible with timthumb. You might want to stick to it if you depend on any of these things:
 
 * Progressive JPEGs are saved by default unless the parameter `p` is explicitly set to `0`.
+* I decided to expose some timing and cache stats as well as an X-Generator header in responses by default as ImageMagick can be a resource-heavy library and these things are good to know. You can disable this behaviour by defining a constant - `define('SKIP_IMTHUMB_HEADERS', true);`.
 
 ### License and Credits
 
