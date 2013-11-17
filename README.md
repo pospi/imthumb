@@ -27,6 +27,10 @@ The following features work differently or are otherwise incompatible with timth
 * Progressive JPEGs are saved by default unless the parameter `p` is explicitly set to `0`.
 * I decided to expose some timing and cache stats as well as an X-Generator header in responses by default as ImageMagick can be a resource-heavy library and these things are good to know. You can disable this behaviour by defining a constant - `define('SKIP_IMTHUMB_HEADERS', true);`.
 
+### Notes on Performance
+
+In my testing, ImageMagick typically has a much lower memory usage than GD (about 3x), but higher CPU utilisation (about 2x). Obviously there are advantages and disadvantages to each library and its internals and your choice will depend on your infrastructure and requirements. Imagick offers a much richer set of image manipulation methods at the expense of more intensive computations.
+
 ### License and Credits
 
 This software is licensed under an MIT open source license, see LICENSE.txt for details.
