@@ -29,6 +29,8 @@ class ImThumb
 	private $imageType;
 	private $mimeType;
 	private $imageExt;
+	private $src;
+	private $mtime;
 
 	private $isValidSrc = true;
 
@@ -58,26 +60,10 @@ class ImThumb
 			$this->startCPU = array((double)($data['ru_utime.tv_sec'] + $data['ru_utime.tv_usec'] / 1000000), (double)($data['ru_stime.tv_sec'] + $data['ru_stime.tv_usec'] / 1000000));
 		}
 
-		$src = $this->getRealImagePath();
-
+		// set default width / height if none provided
 		if (!$this->param('width') && !$this->param('height')) {
 			$this->params['width'] = $this->params['height'] = 100;
 		}
-
-		if ($src) {
-			if ($this->param('cache') && file_exists($this->getCachePath())) {
-				$this->hasCache = true;
-				$this->loadImageMeta($src);
-			} else {
-				$this->loadImage($src);
-				$this->doResize();
-			}
-		} else {
-			$this->critical("No image path specified for thumbnail generation", self::ERR_SRC_IMAGE);
-		}
-
-		$this->initCacheDir();
-		$this->checkExpiredCaches();
 	}
 
 	public function __destruct()
@@ -100,8 +86,29 @@ class ImThumb
 	//--------------------------------------------------------------------------
 	// Loading
 
-	public function loadImage($src)
+	public function loadImage($src = null)
 	{
+		if ($src === null) {
+			$src = $this->param('src');
+		}
+
+		if ($src) {
+			if ($this->param('cache') && file_exists($this->getCachePath())) {
+				$this->hasCache = true;
+				$this->loadImageMeta($src);
+			} else {
+				$this->loadImageFile($src);
+				$this->doResize();
+			}
+		} else {
+			$this->critical("No image path specified for thumbnail generation", self::ERR_SRC_IMAGE);
+		}
+	}
+
+	public function loadImageFile($src)
+	{
+		$src = $this->getRealImagePath($src);
+
 		$this->loadImageMeta($src);
 		$this->imageHandle = new Imagick();
 
@@ -127,12 +134,21 @@ class ImThumb
 
 	protected function loadImageMeta($src)
 	{
+		$src = $this->getRealImagePath($src);
+
+		$this->mtime = @filemtime($src);
+		if (!$this->mtime) {
+			$this->isValidSrc = false;
+			return;
+		}
+
 		$sData = @getimagesize($src);
 		if (!$sData) {
 			$this->isValidSrc = false;
 			return;
 		}
 
+		$this->src = $src;
 		$this->imageType = $sData[2];
 
 		$this->mimeType = strtolower($sData['mime']);
@@ -146,23 +162,21 @@ class ImThumb
 		$this->imageExt = substr($src, strrpos($src, '.') + 1);
 	}
 
-	private function getRealImagePath()
+	private function getRealImagePath($src)
 	{
-		$src = $this->param('src');
-		if (!$src) {
-			return false;
-		}
-
 		if (preg_match('@^https?://@i', $src)) {
 			// :TODO:
 			throw new Exception('External images not implemented yet');
 		}
 		if ($this->param('baseDir')) {
-			return $this->param('baseDir') . '/' . $src;
+			if (preg_match('@^' . preg_quote($this->param('baseDir'), '@') . '@', $src)) {
+				return $src;
+			}
+			return realpath($this->param('baseDir') . '/' . $src);
 		}
 
 		require_once(__DIR__ . '/imthumb-requesthandler.class.php');
-		return ImthumbRequestHandler::getDocRoot() . $src;
+		return realpath(ImthumbRequestHandler::getDocRoot() . $src);
 	}
 
 	//--------------------------------------------------------------------------
@@ -378,6 +392,9 @@ class ImThumb
 
 		if (!$this->isValidSrc) {
 			header('HTTP/1.0 404 Not Found');
+		} else if ($this->hasBrowserCache()) {
+			header('HTTP/1.0 304 Not Modified');
+			return;
 		}
 		header('Content-Type: ' . $this->mimeType);
 		header('Accept-Ranges: none');
@@ -421,7 +438,10 @@ class ImThumb
 	{
 		$this->sendHeaders();
 
-		echo $this->getImage();
+		$str = $this->getImage();
+		echo $str;
+
+		return $str ? true : false;
 	}
 
 	public function getImage()
@@ -450,6 +470,18 @@ class ImThumb
 		}
 	}
 
+	public function hasBrowserCache()
+	{
+		if ($this->mtime <= 0 || !$this->param('browserCache') || empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+			return false;
+		}
+
+		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $this->mtime) {
+			return false;
+		}
+		return true;
+	}
+
 	//--------------------------------------------------------------------------
 	// Caching
 
@@ -470,6 +502,8 @@ class ImThumb
 		if ($this->hasCache || !$this->param('cache')) {
 			return;
 		}
+
+		$this->initCacheDir();
 
 		$tempfile = tempnam($this->param('cache'), 'imthumb_tmpimg_');
 

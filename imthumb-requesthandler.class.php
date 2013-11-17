@@ -66,9 +66,23 @@ abstract class ImthumbRequestHandler
 			}
 		}
 
-		// process request steps in order
+		// load up the image
+		$handler->loadImage();
+
+		// check for browser cache
+		if ($handler->hasBrowserCache()) {
+			$handler->sendHeaders();
+			exit(0);
+		}
+
+		// check and write to caches
 		$handler->writeToCache();
-		$handler->display();
+
+		// output the image and all headers
+		if ($handler->display()) {
+			// only check caches for clearing after actually serving something, its a slightly expensive operation
+			$handler->checkExpiredCaches();
+		}
 	}
 
 	private static function readParam($name, $default = null)
