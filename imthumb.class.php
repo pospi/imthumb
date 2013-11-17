@@ -93,9 +93,15 @@ class ImThumb
 		}
 
 		if ($src) {
-			if ($this->param('cache') && file_exists($this->getCachePath())) {
-				$this->hasCache = true;
+			if ($this->param('cache') && ($cachemtime = @filemtime($this->getCachePath()))) {
 				$this->loadImageMeta($src);
+				// expire caches when source images are updated
+				if ($this->mtime > $cachemtime) {
+					$this->loadImageFile($src);
+					$this->doResize();
+				} else {
+					$this->hasCache = true;
+				}
 			} else {
 				$this->loadImageFile($src);
 				$this->doResize();
