@@ -204,6 +204,13 @@ class ImThumbFilters
 
 	//--------------------------------------------------------------------------
 
+	public static function getAllowableMethods()
+	{
+		return self::$IMAGE_FILTER_PARAMS;
+	}
+
+	//--------------------------------------------------------------------------
+
 	private function critical($string)
 	{
 		throw new Exception("ImThumb::Filters: {$string}", ImThumb::ERR_FILTER);
