@@ -421,7 +421,9 @@ class ImThumb
 
 		// informational headers
 		if (!$this->param('silent')) {
-			header('X-Generator: ImThumb v' . self::VERSION);
+			$imVer = Imagick::getVersion();
+			header('X-Generator: ImThumb v' . self::VERSION . '; ' . $imVer['versionString']);
+
 			if ($this->hasCache) {
 				header('X-Img-Cache: HIT');
 			} else {
