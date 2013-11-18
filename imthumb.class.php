@@ -381,7 +381,7 @@ class ImThumb
 	//--------------------------------------------------------------------------
 	// Output
 
-	public function sendHeaders()
+	public function sendHeaders($serverErrorString = null)
 	{
 		// check we can send these first
 		if (headers_sent()) {
@@ -396,12 +396,17 @@ class ImThumb
 		// get image size. Have to workaround bugs in Imagick that return 0 for size by counting ourselves.
 		$byteSize = $this->getImageSize();
 
-		if (!$this->isValidSrc) {
-			header('HTTP/1.0 404 Not Found');
-		} else if ($this->hasBrowserCache()) {
+		if ($this->hasBrowserCache()) {
 			header('HTTP/1.0 304 Not Modified');
 		} else {
-			header('HTTP/1.0 200 OK');
+			if ($serverErrorString) {
+				header('HTTP/1.0 500 Internal Server Error');
+				header('X-ImThumb-Error', $serverErrorString);
+			} else if (!$this->isValidSrc) {
+				header('HTTP/1.0 404 Not Found');
+			} else {
+				header('HTTP/1.0 200 OK');
+			}
 			header('Content-Type: ' . $this->mimeType);
 			header('Accept-Ranges: none');
 			header('Last-Modified: ' . $modifiedDate);
