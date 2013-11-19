@@ -8,6 +8,7 @@
  */
 
 class ImThumbException extends Exception {}
+class ImThumbCriticalException extends ImThumbException {}
 
 class ImThumb
 {
@@ -178,6 +179,11 @@ class ImThumb
 		if (!$this->mtime) {
 			$this->isValidSrc = false;
 			return;
+		}
+
+		$size = @filesize($src);
+		if ($size > $this->param('maxSize')) {
+			$this->critical("Image file exceeds maximum processable size", self::ERR_SRC_IMAGE);
 		}
 
 		$sData = @getimagesize($src);

@@ -27,10 +27,10 @@ abstract class ImthumbRequestHandler
 
 			'filters' => self::readParam('f', self::readConst('DEFAULT_F', '')),
 
-			'fallbackImg' => self::readConst('NOT_FOUND_IMAGE'),
-			'errorImg' => self::readConst('ERROR_IMAGE'),
-			'pngTransparency' => self::readConst('PNG_IS_TRANSPARENT', false),
+			'fallbackImg' => self::readConst('ENABLE_NOT_FOUND_IMAGE', true) ? self::readConst('NOT_FOUND_IMAGE', true) : false,
+			'errorImg' => self::readConst('ENABLE_ERROR_IMAGE', true) ? self::readConst('ERROR_IMAGE', true) : false,
 
+			'pngTransparency' => self::readConst('PNG_IS_TRANSPARENT', false),
 			'jpgProgressive' => self::readParam('p', self::readConst('DEFAULT_PROGRESSIVE_JPEG', 1)),
 
 			'maxw' => self::readConst('MAX_WIDTH', 1500),
@@ -77,10 +77,19 @@ abstract class ImthumbRequestHandler
 			if ($handler->display()) {
 				// only check caches for clearing after actually serving something, its a slightly expensive operation
 				$handler->checkExpiredCaches();
+			} else {
+				// nothing to display, we aren't configured to show any fallback 404 image
+				throw new ImThumbCriticalException("Source image not found. Source querystring: {$_SERVER['QUERY_STRING']}", ImThumb::ERR_SERVER_CONFIG);
 			}
 		} catch (Exception $e) {
+			if ($e instanceof ImThumbCriticalException) {
+				throw $e;
+			}
+
 			// attempt to load any configured error image. If this errors out it will just throw the exception naturally.
 			$handler->loadErrorImage();
+			$handler->configureUnalteredFitImage();
+			$handler->doResize();
 
 			if ($e instanceof ImThumbException) {
 				if ($e->getCode() == ImThumb::ERR_SRC_IMAGE) {
@@ -93,8 +102,12 @@ abstract class ImthumbRequestHandler
 				$msg = 'Unknown error ' . $e->getCode() . ': ' . $e->getMessage();
 			}
 
+			$theImage = $handler->getImage();
+			if (!$theImage) {
+				throw $e;
+			}
 			$handler->sendHeaders($msg);
-			echo $handler->getImage();
+			echo $theImage;
 			exit(0);
 		}
 	}
