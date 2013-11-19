@@ -7,6 +7,8 @@
  * @since	2013-10-18
  */
 
+class ImThumbException extends Exception {}
+
 class ImThumb
 {
 	const VERSION = 1.1;
@@ -16,6 +18,7 @@ class ImThumb
 	const ERR_OUTPUTTING = 3;
 	const ERR_CACHE = 4;
 	const ERR_FILTER = 5;
+	const ERR_CONFIGURATION = 6;
 
 	public static $HAS_MBSTRING;	// used for reliable image length determination. Initialised below class def'n.
 	public static $MBSTRING_SHADOW;
@@ -116,20 +119,16 @@ class ImThumb
 		$src = $this->getRealImagePath($src);
 
 		$this->loadImageMeta($src);
-		$this->imageHandle = new Imagick();
 
 		if (!$this->isValidSrc) {
-			// create a dummy image first, otherwise further calls will fail if no fallback image specified
-			$this->imageHandle->newImage(1, 1, new ImagickPixel('#FF0000'));
-
-			if ($fallback = $this->param('fallbackImg')) {
-				$this->imageHandle->readImage($fallback);
-			}
+			// load up the fallback image if we couldn't find the source
+			$this->loadFallbackImage();
 		} else {
+			$this->imageHandle = new Imagick();
 			$this->imageHandle->readImage($src);
 		}
 
-		if ($this->mimeType == 'image/jpg') {
+		if ($this->mimeType == 'image/jpeg') {
 			$this->imageHandle->setFormat('jpg');
 		} else if ($this->mimeType == 'image/gif') {
 			$this->imageHandle->setFormat('gif');
@@ -168,11 +167,41 @@ class ImThumb
 		$this->imageExt = substr($src, strrpos($src, '.') + 1);
 	}
 
-	private function getRealImagePath($src)
+	public function loadFallbackImage()
+	{
+		return $this->loadImageWithFallback($this->param('fallbackImg'), '#FF7700');
+	}
+
+	public function loadErrorImage()
+	{
+		return $this->loadImageWithFallback($this->param('errorImg'), '#FF0000');
+	}
+
+	private function loadImageWithFallback($imagePath, $fallbackColor, $fallbackW = 32, $fallbackH = 32)
+	{
+		$this->imageHandle = new Imagick();
+
+		if ($imagePath) {
+			if (!$this->imageHandle->readImage($imagePath)) {
+				// throw exception if the configured fallback is incorrect
+				throw new ImThumbException("Cannot display error image", self::ERR_CONFIGURATION);
+			}
+			$this->loadImageMeta($imagePath);
+			return true;
+		}
+
+		// not configured.. show coloured square
+		$this->imageHandle->newImage($fallbackW, $fallbackH, new ImagickPixel($fallbackColor));
+		$this->imageHandle->setFormat('jpg');
+		$this->mimeType = 'image/jpeg';
+		return false;
+	}
+
+	protected function getRealImagePath($src)
 	{
 		if (preg_match('@^https?://@i', $src)) {
 			// :TODO:
-			throw new Exception('External images not implemented yet');
+			throw new ImThumbException('External images not implemented yet');
 		}
 		if ($this->param('baseDir')) {
 			if (preg_match('@^' . preg_quote($this->param('baseDir'), '@') . '@', $src)) {
@@ -275,12 +304,18 @@ class ImThumb
 				$filterArgs = explode(',', $filterArgs);
 				$filterName = trim(array_shift($filterArgs));
 
-				if (is_numeric($filterName)) {
-					// process TimThumb filters
-					$filterHandler->timthumbFilter($filterName, $filterArgs);
-				} else {
-					// process Imagick filters
-					call_user_func_array(array($filterHandler, $filterName), $filterArgs);
+				try {
+					if (is_numeric($filterName)) {
+						// process TimThumb filters
+						$filterHandler->timthumbFilter($filterName, $filterArgs);
+					} else {
+						// process Imagick filters
+						call_user_func_array(array($filterHandler, $filterName), $filterArgs);
+					}
+				} catch (ImThumbException $e) {
+					$this->critical("Problem with filter '{$filterName}': " . $e->getMessage());
+				} catch (ImagickException $e) {
+					$this->critical("Problem running filter '{$filterName}': " . $e->getMessage());
 				}
 			}
 		}
@@ -612,7 +647,7 @@ class ImThumb
 
 	protected function critical($string, $code = 0)
 	{
-		throw new Exception('ImThumb: ' . $string, $code);
+		throw new ImThumbException($string, $code);
 	}
 }
 
