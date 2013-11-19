@@ -71,13 +71,13 @@ abstract class ImthumbRequestHandler
 			}
 
 			// check and write to caches
-			$handler->writeToCache();
+			if (!$handler->writeToCache()) {
+				// check cache directory for expired content if we processed an already cached image
+				$handler->checkExpiredCaches();
+			}
 
 			// output the image and all headers
-			if ($handler->display()) {
-				// only check caches for clearing after actually serving something, its a slightly expensive operation
-				$handler->checkExpiredCaches();
-			} else {
+			if (!$handler->display()) {
 				// nothing to display, we aren't configured to show any fallback 404 image
 				throw new ImThumbCriticalException("Source image not found. Source querystring: {$_SERVER['QUERY_STRING']}", ImThumb::ERR_SERVER_CONFIG);
 			}
