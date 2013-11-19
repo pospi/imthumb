@@ -58,33 +58,44 @@ abstract class ImthumbRequestHandler
 		date_default_timezone_set(@date_default_timezone_get());
 
 		// create image handler
+		$handler = new ImThumb($params);
+
 		try {
-			$handler = new ImThumb($params);
-		} catch (Exception $e) {
-			if ($e->getCode() == ImThumb::ERR_SRC_IMAGE) {
-				// log the querystring passed in addition to regular message
-				throw new Exception($e->getMessage() . ' Source querystring: ' . $_SERVER['QUERY_STRING'], ImThumb::ERR_SRC_IMAGE);
-			} else {
-				throw $e;
+			// load up the image
+			$handler->loadImage();
+
+			// check for browser cache
+			if ($handler->hasBrowserCache()) {
+				$handler->sendHeaders();
+				exit(0);
 			}
-		}
 
-		// load up the image
-		$handler->loadImage();
+			// check and write to caches
+			$handler->writeToCache();
 
-		// check for browser cache
-		if ($handler->hasBrowserCache()) {
-			$handler->sendHeaders();
+			// output the image and all headers
+			if ($handler->display()) {
+				// only check caches for clearing after actually serving something, its a slightly expensive operation
+				$handler->checkExpiredCaches();
+			}
+		} catch (Exception $e) {
+			// attempt to load any configured error image. If this errors out it will just throw the exception naturally.
+			$handler->loadErrorImage();
+
+			if ($e instanceof ImThumbException) {
+				if ($e->getCode() == ImThumb::ERR_SRC_IMAGE) {
+					// log the querystring passed in addition to regular message
+					$msg = $e->getMessage() . ' Source querystring: ' . $_SERVER['QUERY_STRING'];
+				} else {
+					$msg = $e->getMessage();
+				}
+			} else {
+				$msg = 'Unknown error ' . $e->getCode() . ': ' . $e->getMessage();
+			}
+
+			$handler->sendHeaders($msg);
+			echo $handler->getImage();
 			exit(0);
-		}
-
-		// check and write to caches
-		$handler->writeToCache();
-
-		// output the image and all headers
-		if ($handler->display()) {
-			// only check caches for clearing after actually serving something, its a slightly expensive operation
-			$handler->checkExpiredCaches();
 		}
 	}
 
