@@ -86,6 +86,24 @@ class ImThumb
 		return isset($this->params[$name]) ? $this->params[$name] : null;
 	}
 
+	// reset all parameters related to externally configurable image output
+	private function resetImageParams()
+	{
+		unset(
+			$this->params['src'],
+			$this->params['width'],
+			$this->params['height'],
+			$this->params['quality'],
+			$this->params['align'],
+			$this->params['cropMode'],
+			$this->params['sharpen'],
+			$this->params['canvasColor'],
+			$this->params['canvasTransparent'],
+			$this->params['filters'],
+			$this->params['jpgProgressive']
+		);
+	}
+
 	//--------------------------------------------------------------------------
 	// Loading
 
@@ -169,12 +187,14 @@ class ImThumb
 
 	public function loadFallbackImage()
 	{
-		return $this->loadImageWithFallback($this->param('fallbackImg'), '#FF7700');
+		list($w, $h) = $this->getTargetSize();
+		return $this->loadImageWithFallback($this->param('fallbackImg'), '#FF7700', $w, $h);
 	}
 
 	public function loadErrorImage()
 	{
-		return $this->loadImageWithFallback($this->param('errorImg'), '#FF0000');
+		list($w, $h) = $this->getTargetSize();
+		return $this->loadImageWithFallback($this->param('errorImg'), '#FF0000', $w, $h);
 	}
 
 	private function loadImageWithFallback($imagePath, $fallbackColor, $fallbackW = 32, $fallbackH = 32)
@@ -220,20 +240,25 @@ class ImThumb
 	public function doResize()
 	{
 		if (!$this->isValidSrc) {
-			return;
+			// force showing the entire image, unaltered, if we are displaying a fallback
+			$prevW = $this->params['width'];
+			$prevH = $this->params['height'];
+			$prevQ = $this->params['quality'];
+			$this->resetImageParams();
+			$this->params['width'] = $prevW;
+			$this->params['height'] = $prevH;
+			$this->params['quality'] = $prevQ;
+			$this->params['cropMode'] = 2;
+			$this->params['canvasTransparent'] = 1;
 		}
 
 		// get standard input properties
-		$new_width = abs($this->param('width'));
-		$new_height = abs($this->param('height'));
 		$zoom_crop = (int)$this->param('cropMode');
 		$quality = abs($this->param('quality'));
 		$align = $this->param('align');
 		$sharpen = (bool)$this->param('sharpen');
 
-		// ensure size limits can not be abused
-		$new_width = min($new_width, $this->param('maxw'));
-		$new_height = min($new_height, $this->param('maxh'));
+		list($new_width, $new_height) = $this->getTargetSize();
 
 		// Get original width and height
 		$width = $this->imageHandle->valid() ? $this->imageHandle->getImageWidth() : 0;
@@ -335,6 +360,14 @@ class ImThumb
 		}
 
 		$this->compress();
+	}
+
+	protected function getTargetSize()
+	{
+		$w = min(abs($this->param('width')), $this->param('maxw'));
+		$h = min(abs($this->param('height')), $this->param('maxh'));
+
+		return array($w, $h);
 	}
 
 	protected function getCropCoords($align, $origW, $origH, $destW, $destH)
