@@ -219,6 +219,10 @@ class ImThumb
 
 	public function doResize()
 	{
+		if (!$this->isValidSrc) {
+			return;
+		}
+
 		// get standard input properties
 		$new_width = abs($this->param('width'));
 		$new_height = abs($this->param('height'));
