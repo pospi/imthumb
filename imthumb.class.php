@@ -87,7 +87,7 @@ class ImThumb
 	}
 
 	// reset all parameters related to externally configurable image output
-	private function resetImageParams()
+	public function resetImageParams()
 	{
 		unset(
 			$this->params['src'],
@@ -102,6 +102,21 @@ class ImThumb
 			$this->params['filters'],
 			$this->params['jpgProgressive']
 		);
+	}
+
+	public function configureUnalteredFitImage()
+	{
+		$prevW = $this->params['width'];
+		$prevH = $this->params['height'];
+		$prevQ = $this->params['quality'];
+
+		$this->resetImageParams();
+
+		$this->params['width'] = $prevW;
+		$this->params['height'] = $prevH;
+		$this->params['quality'] = $prevQ;
+		$this->params['cropMode'] = 2;
+		$this->params['canvasTransparent'] = 1;
 	}
 
 	//--------------------------------------------------------------------------
@@ -188,26 +203,31 @@ class ImThumb
 	public function loadFallbackImage()
 	{
 		list($w, $h) = $this->getTargetSize();
-		return $this->loadImageWithFallback($this->param('fallbackImg'), '#FF7700', $w, $h);
+		return $this->loadFallbackImgOrColor($this->param('fallbackImg'), '#FF7700', $w, $h);
 	}
 
 	public function loadErrorImage()
 	{
 		list($w, $h) = $this->getTargetSize();
-		return $this->loadImageWithFallback($this->param('errorImg'), '#FF0000', $w, $h);
+		return $this->loadFallbackImgOrColor($this->param('errorImg'), '#FF0000', $w, $h);
 	}
 
-	private function loadImageWithFallback($imagePath, $fallbackColor, $fallbackW = 32, $fallbackH = 32)
+	private function loadFallbackImgOrColor($imagePath, $fallbackColor, $fallbackW = 32, $fallbackH = 32)
 	{
 		$this->imageHandle = new Imagick();
 
-		if ($imagePath) {
+		if (is_string($imagePath)) {
 			if (!$this->imageHandle->readImage($imagePath)) {
 				// throw exception if the configured fallback is incorrect
 				throw new ImThumbException("Cannot display error image", self::ERR_CONFIGURATION);
 			}
 			$this->loadImageMeta($imagePath);
+			$this->isValidSrc = false;
 			return true;
+		}
+
+		if ($imagePath === false) {
+			return false;
 		}
 
 		// not configured.. show coloured square
