@@ -261,15 +261,16 @@ class ImThumb
 	{
 		if (!$this->isValidSrc) {
 			// force showing the entire image, unaltered, if we are displaying a fallback
-			$prevW = $this->params['width'];
-			$prevH = $this->params['height'];
-			$prevQ = $this->params['quality'];
-			$this->resetImageParams();
-			$this->params['width'] = $prevW;
-			$this->params['height'] = $prevH;
-			$this->params['quality'] = $prevQ;
-			$this->params['cropMode'] = 2;
-			$this->params['canvasTransparent'] = 1;
+			$this->configureUnalteredFitImage();
+		}
+
+		// check if the image is OK to be handled first
+		try {
+			$isValid = $this->imageHandle->valid();
+		} catch (ImagickException $e) {
+			// :NOTE: this is a non-critical error because its main symptom is disabling
+			// generated fallback images and so we need to jump out
+			return false;
 		}
 
 		// get standard input properties
@@ -281,8 +282,8 @@ class ImThumb
 		list($new_width, $new_height) = $this->getTargetSize();
 
 		// Get original width and height
-		$width = $this->imageHandle->valid() ? $this->imageHandle->getImageWidth() : 0;
-		$height = $this->imageHandle->valid() ? $this->imageHandle->getImageHeight() : 0;
+		$width = $this->imageHandle->getImageWidth();
+		$height = $this->imageHandle->getImageHeight();
 		$origin_x = 0;
 		$origin_y = 0;
 
@@ -380,6 +381,8 @@ class ImThumb
 		}
 
 		$this->compress();
+
+		return true;
 	}
 
 	protected function getTargetSize()
