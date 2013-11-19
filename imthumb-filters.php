@@ -213,6 +213,6 @@ class ImThumbFilters
 
 	private function critical($string)
 	{
-		throw new Exception("ImThumb::Filters: {$string}", ImThumb::ERR_FILTER);
+		throw new ImThumbException("Filters: {$string}", ImThumb::ERR_FILTER);
 	}
 }
