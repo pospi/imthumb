@@ -473,7 +473,7 @@ class ImThumb
 		} else {
 			if ($serverErrorString) {
 				header('HTTP/1.0 500 Internal Server Error');
-				header('X-ImThumb-Error', $serverErrorString);
+				header('X-ImThumb-Error: ' . $serverErrorString);
 			} else if (!$this->isValidSrc) {
 				header('HTTP/1.0 404 Not Found');
 			} else {
