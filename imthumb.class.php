@@ -623,7 +623,7 @@ class ImThumb
 	public function writeToCache()
 	{
 		if ($this->hasCache || !$this->param('cache')) {
-			return;
+			return false;
 		}
 
 		$this->initCacheDir();
@@ -654,6 +654,8 @@ class ImThumb
 			@unlink($tempfile);
 			$this->critical("Could not get a lock for writing", self::ERR_CACHE);
 		}
+
+		return true;
 	}
 
 	public function checkExpiredCaches()
