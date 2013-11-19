@@ -9,7 +9,7 @@ I originally wrote this because I was attempting to optimise the quality of timt
 ### Features
 
 * Drop-in replacement, uses the same configuration files as timthumb does.
-* Self-contained class file and accessible image handling API, rather than a messy script designed to run in its own environment.
+* Self-contained class files and accessible image handling API, rather than a messy script designed to run in its own environment.
 
 #### Additional Functionality
 
@@ -19,6 +19,7 @@ The following additional features are provided by ImThumb in addition to baselin
 * Progressive JPEG encoding for better image load experience. Can be disabled by passing `p=0` to the script.
 * GIF images can be resized whilst retaining their transparent backgrounds.
 * Better compression of generated images and smaller filesizes.
+* Error handling is both more useful & unobtrusive, with meaningful error messages returned as extended HTTP headers and non-configured 404 & error images displayed as coloured squares.
 
 #### Incompatibilities
 
