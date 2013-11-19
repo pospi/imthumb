@@ -27,6 +27,7 @@ The following features work differently or are otherwise incompatible with timth
 
 * Progressive JPEGs are saved by default unless the parameter `p` is explicitly set to `0`.
 * I decided to expose some timing and cache stats as well as an X-Generator header in responses by default as ImageMagick can be a resource-heavy library and these things are good to know. You can disable this behaviour by defining a constant - `define('SKIP_IMTHUMB_HEADERS', true);`.
+* Error images are rendered to the exact dimensions of the requested image, rather than being returned as-is.
 
 ### Notes on Performance
 
