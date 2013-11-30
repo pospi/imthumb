@@ -44,7 +44,7 @@ As with TimThumb, configuration is managed by constants defined in a config file
 * By default, ImThumb will always render an image if an error occurs, even if no fallbacks are configured. Due to the difference, some additional constants may be used:
 	* `ENABLE_NOT_FOUND_IMAGE` and `ENABLE_ERROR_IMAGE` can be set to `false` to restore plaintext error output and default TimThumb functionality. Broken images will appear as broken X's on your pages.
 	* `COLOR_NOT_FOUND_IMAGE` and `COLOR_ERROR_IMAGE` are used to control the colours displayed for the two, err, fallback fallback images.
-* `FILE_CACHE_FILENAME_FORMAT` - use this option to specify a format string for writing files to the cache. This can be used for example to permanently generate images for use by other services or in backups. The sprintf format it takes is as follows: `%filename%-%w%x%h%.%ext%`
+* `FILE_CACHE_FILENAME_FORMAT` - use this option to specify a format string for writing files to the cache. This can be used for example to permanently generate images for use by other services or in backups. The sprintf format it takes can include any of the following: `%filename%-%w%x%h%x%q%-%zc%%a%%s%%cc%%ct%%filters%%pjpg%.%ext%`, but you need not include all parameters if you will not be using them all.
 * `IMTHUMB_RATE_LIMITER` - defines the name of a loaded class to be instantiated for controlling [rate limiting](#implementing-rate-limiting).
 
 ##### Unimplemented constants:
