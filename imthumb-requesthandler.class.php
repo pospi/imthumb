@@ -49,6 +49,7 @@ abstract class ImthumbRequestHandler
 			'cache' => self::readConst('FILE_CACHE_ENABLED', true) ? self::readConst('FILE_CACHE_DIRECTORY', './cache') : false,
 			'cachePrefix' => self::readConst('FILE_CACHE_PREFIX', 'timthumb'),
 			'cacheSuffix' => self::readConst('FILE_CACHE_SUFFIX', '.timthumb.txt'),
+			'cacheFilenameFormat' => self::readConst('FILE_CACHE_FILENAME_FORMAT', false),	// try something like '%filename%-%w%x%h%x%q%-%zc%%a%%s%%cc%%ct%%filters%%pjpg%.%ext%'
 			'cacheMaxAge' => self::readConst('FILE_CACHE_MAX_FILE_AGE', 86400),
 			'cacheCleanPeriod' => self::readConst('FILE_CACHE_TIME_BETWEEN_CLEANS', 86400),
 			'cacheSalt' => self::readConst('FILE_CACHE_NAME_SALT', 'IOLUJN!(Y&)(TEHlsio(&*Y3978fgsdBBu'),

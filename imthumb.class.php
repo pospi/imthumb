@@ -728,6 +728,38 @@ class ImThumb
 			return false;
 		}
 
+		if ($this->param('cacheFilenameFormat')) {
+			list($width, $height) = $this->getTargetSize();
+
+			return $cacheDir . '/' . str_replace(array(
+				'%filename%',
+				'%ext%',
+				'%w%',
+				'%h%',
+				'%q%',
+				'%a%',
+				'%zc%',
+				'%s%',
+				'%cc%',
+				'%ct%',
+				'%filters%',
+				'%pjpg%',
+			), array(
+				basename($this->src, '.' . $this->imageExt),
+				$this->imageExt,
+				$width,
+				$height,
+				$this->param('quality'),
+				$this->param('align'),
+				$this->param('cropMode'),
+				$this->param('sharpen') ? 's' : '',
+				$this->param('canvasColor'),
+				$this->param('canvasTransparent') ? 't' : '',
+				$this->param('filters'),
+				$this->param('jpgProgressive') ? 'p' : '',
+			), $this->param('cacheFilenameFormat'));
+		}
+
 		return $cacheDir . '/' . $this->param('cachePrefix') . md5($this->param('cacheSalt') . implode('', $this->params) . self::VERSION) . $this->param('cacheSuffix');
 	}
 
