@@ -367,8 +367,8 @@ class ImThumb
 
 				$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_trans ? null : $canvas_color, $this->mimeType);
 
-				$xOffset = ($new_width - $width) / 2;
-				$yOffset = ($new_height - $height) / 2;
+				$xOffset = ($new_width - $this->imageHandle->getImageWidth()) / 2;
+				$yOffset = ($new_height - $this->imageHandle->getImageHeight()) / 2;
 
 				$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, $xOffset, $yOffset);
 				$this->imageHandle = $canvas;
