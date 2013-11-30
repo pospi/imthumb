@@ -13,6 +13,7 @@ I originally wrote this because I was attempting to optimise the quality of TimT
 
 The following additional features are provided by ImThumb in addition to baseline TimThumb functionality:
 
+* Direct cropping using explicit coordinates. The querystring parameter `cr` accepts four comma-delimited numbers indicating pixel positions to crop to: `startX`, `startY`, `endX` and `endY`. If any numbers are negative or outside the bounds of the image then the image will be positioned within a larger canvas containing itself. When combined with the normal `w`idth and `h`eight parameters, the resulting cropped image is reprocessed to fit within the target dimensions as it would normally be when passed to ImThumb pre-cropped.
 * Extended image filters from the ImageMagick library. For a full list, see [this manpage](http://www.php.net/manual/en/class.imagick.php#imagick.imagick.methods) under the heading "*Image effects*".
 * Progressive JPEG encoding for better image load experience. Can be disabled by passing `p=0` to the script.
 * Support for custom rate limiting. Full details are detailed [below](#implementing-rate-limiting).
