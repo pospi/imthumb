@@ -38,6 +38,7 @@ abstract class ImthumbRequestHandler
 
 			'maxSize' => self::readConst('MAX_FILE_SIZE', 10485760),
 			'externalAllowed' => !self::readConst('BLOCK_EXTERNAL_LEECHERS', false),
+			'rateLimiter' => self::readConst('IMTHUMB_RATE_LIMITER', false),
 
 			'baseDir' => self::readConst('IMTHUMB_BASEDIR', self::readConst('LOCAL_FILE_BASE_DIRECTORY')),	// :NOTE: IMTHUMB_BASEDIR maintains compatibility with early versions of ImThumb
 
@@ -57,10 +58,30 @@ abstract class ImthumbRequestHandler
 		// set timezone if unset to avoid warnings
 		date_default_timezone_set(@date_default_timezone_get());
 
-		// create image handler
-		$handler = new ImThumb($params);
-
 		try {
+			// load up the configured rate limiter class, if any
+			if (!empty($params['rateLimiter'])) {
+				$limiter = $params['rateLimiter'];
+
+				// if the configured class does not exist, this is a hack attempt and someone is hitting the imthumb.php script directly to bypass rate limiting
+				if (!class_exists($limiter)) {
+					$remoteIPString = isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : (
+						isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '')
+					);
+					throw new ImThumbCriticalException("Rate limiter class not found, hack attempt! Source {$remoteIPString}", ImThumb::ERR_HACK_ATTEMPT);
+				}
+
+				$params['rateLimiter'] = new $limiter();
+			}
+			$handler = new ImThumb($params);
+
+			// check for rate limiting
+			if (!$handler->checkRateLimits()) {
+				$msg = self::readConst('IMTHUMB_RATE_LIMIT_MSG', "Rate limit exceeded. Please do not hammer this script!");
+				echo $msg;
+				throw new ImThumbCriticalException($msg, ImThumb::ERR_RATE_EXCEEDED);
+			}
+
 			// load up the image
 			$handler->loadImage();
 
