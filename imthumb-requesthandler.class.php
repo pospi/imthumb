@@ -29,6 +29,8 @@ abstract class ImthumbRequestHandler
 
 			'fallbackImg' => self::readConst('ENABLE_NOT_FOUND_IMAGE', true) ? self::readConst('NOT_FOUND_IMAGE', true) : false,
 			'errorImg' => self::readConst('ENABLE_ERROR_IMAGE', true) ? self::readConst('ERROR_IMAGE', true) : false,
+			'fallbackColor' => self::readConst('COLOR_NOT_FOUND_IMAGE', '#FF7700'),
+			'errorColor' => self::readConst('COLOR_ERROR_IMAGE', '#FF0000'),
 
 			'pngTransparency' => self::readConst('PNG_IS_TRANSPARENT', false),
 			'jpgProgressive' => self::readParam('p', self::readConst('DEFAULT_PROGRESSIVE_JPEG', 1)),

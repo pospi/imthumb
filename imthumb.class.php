@@ -216,13 +216,13 @@ class ImThumb
 	public function loadFallbackImage()
 	{
 		list($w, $h) = $this->getTargetSize();
-		return $this->loadFallbackImgOrColor($this->param('fallbackImg'), '#FF7700', $w, $h);
+		return $this->loadFallbackImgOrColor($this->param('fallbackImg'), $this->param('fallbackColor'), $w, $h);
 	}
 
 	public function loadErrorImage()
 	{
 		list($w, $h) = $this->getTargetSize();
-		return $this->loadFallbackImgOrColor($this->param('errorImg'), '#FF0000', $w, $h);
+		return $this->loadFallbackImgOrColor($this->param('errorImg'), $this->param('errorColor'), $w, $h);
 	}
 
 	private function loadFallbackImgOrColor($imagePath, $fallbackColor, $fallbackW = 32, $fallbackH = 32)
