@@ -20,6 +20,8 @@ class ImThumb
 	const ERR_CACHE = 4;
 	const ERR_FILTER = 5;
 	const ERR_CONFIGURATION = 6;
+	const ERR_RATE_EXCEEDED = 7;
+	const ERR_HACK_ATTEMPT = 8;
 
 	public static $HAS_MBSTRING;	// used for reliable image length determination. Initialised below class def'n.
 	public static $MBSTRING_SHADOW;
@@ -107,9 +109,9 @@ class ImThumb
 
 	public function configureUnalteredFitImage()
 	{
-		$prevW = $this->params['width'];
-		$prevH = $this->params['height'];
-		$prevQ = $this->params['quality'];
+		$prevW = $this->param('width');
+		$prevH = $this->param('height');
+		$prevQ = $this->param('quality');
 
 		$this->resetImageParams();
 
@@ -708,6 +710,23 @@ class ImThumb
 		}
 
 		return $cacheDir . '/' . $this->param('cachePrefix') . md5($this->param('cacheSalt') . implode('', $this->params) . self::VERSION) . $this->param('cacheSuffix');
+	}
+
+	//--------------------------------------------------------------------------
+	// Rate limiting
+
+	/**
+	 * @return true if rate is OK, false if exceeded
+	 */
+	public function checkRateLimits()
+	{
+		if ($limiter = $this->param('rateLimiter')) {
+			$limiter->setGenerator($this);
+			if (!$limiter->checkRateLimits()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	//--------------------------------------------------------------------------
