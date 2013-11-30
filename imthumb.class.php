@@ -263,7 +263,7 @@ class ImThumb
 			return realpath($this->param('baseDir') . '/' . $src);
 		}
 
-		require_once(__DIR__ . '/imthumb-requesthandler.class.php');
+		require_once(dirname(__FILE__) . '/imthumb-requesthandler.class.php');
 		return realpath(ImthumbRequestHandler::getDocRoot() . $src);
 	}
 
