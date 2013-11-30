@@ -147,7 +147,7 @@ abstract class ImthumbRequestHandler
 
 	protected static function readParam($name, $default = null)
 	{
-		return isset($_GET[$name]) ? $_GET[$name] : $default;
+		return (isset($_GET[$name]) && $_GET[$name] != '') ? $_GET[$name] : $default;
 	}
 
 	protected static function readConst($name, $default = null)
