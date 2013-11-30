@@ -42,6 +42,7 @@ abstract class ImthumbRequestHandler
 			'memoryLimit' => self::readConst('MEMORY_LIMIT', false),
 			'externalAllowed' => !self::readConst('BLOCK_EXTERNAL_LEECHERS', false),
 			'rateLimiter' => self::readConst('IMTHUMB_RATE_LIMITER', false),
+			'rateExceededMessage' => self::readConst('IMTHUMB_RATE_LIMIT_MSG', "Rate limit exceeded. Please do not hammer this script!"),
 
 			'baseDir' => self::readConst('IMTHUMB_BASEDIR', self::readConst('LOCAL_FILE_BASE_DIRECTORY')),	// :NOTE: IMTHUMB_BASEDIR maintains compatibility with early versions of ImThumb
 
@@ -88,11 +89,7 @@ abstract class ImthumbRequestHandler
 			$handler = new ImThumb($params);
 
 			// check for rate limiting
-			if (!$handler->checkRateLimits()) {
-				$msg = self::readConst('IMTHUMB_RATE_LIMIT_MSG', "Rate limit exceeded. Please do not hammer this script!");
-				echo $msg;
-				throw new ImThumbCriticalException($msg, ImThumb::ERR_RATE_EXCEEDED);
-			}
+			$handler->checkRateLimits();
 
 			// load up the image
 			$handler->loadImage();
