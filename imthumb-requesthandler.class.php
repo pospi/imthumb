@@ -13,6 +13,9 @@ abstract class ImthumbRequestHandler
 
 	public static function processRequest()
 	{
+		// avoid timezone setting warnings
+		date_default_timezone_set(@date_default_timezone_get());
+
 		// build params for the class
 		$params = array(
 			'src' => self::readParam('src'),

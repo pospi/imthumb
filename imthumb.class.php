@@ -510,9 +510,6 @@ class ImThumb
 			$this->critical("Could not set image headers, output already started", self::ERR_OUTPUTTING);
 		}
 
-		// avoid timezone setting warnings
-		date_default_timezone_set(@date_default_timezone_get());
-
 		$modifiedDate = gmdate('D, d M Y H:i:s') . ' GMT';
 
 		// get image size. Have to workaround bugs in Imagick that return 0 for size by counting ourselves.
