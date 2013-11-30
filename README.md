@@ -15,10 +15,14 @@ The following additional features are provided by ImThumb in addition to baselin
 
 * Extended image filters from the ImageMagick library. For a full list, see [this manpage](http://www.php.net/manual/en/class.imagick.php#imagick.imagick.methods) under the heading "*Image effects*".
 * Progressive JPEG encoding for better image load experience. Can be disabled by passing `p=0` to the script.
-* GIF images can be resized whilst retaining their transparent backgrounds.
-* Better compression of generated images and smaller filesizes.
-* Error handling is both more useful & unobtrusive, with meaningful error messages returned as extended HTTP headers and non-configured 404 & error images displayed as coloured squares.
 * Support for custom rate limiting. Full details are detailed [below](#implementing-rate-limiting).
+
+#### Improved Functionality
+
+* Better compression of generated images and smaller filesizes.
+* Filters work correctly with respect to transparent images, and do not leave filtered areas outside of explicity transparent pixels
+* GIF images can be resized whilst retaining their transparent backgrounds.
+* Error handling is both more useful & unobtrusive, with meaningful error messages returned as extended HTTP headers and non-configured 404 & error images displayed as coloured squares.
 
 #### TimThumb Incompatibilities
 
