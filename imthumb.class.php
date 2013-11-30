@@ -89,6 +89,11 @@ class ImThumb
 		return isset($this->params[$name]) ? $this->params[$name] : null;
 	}
 
+	public function params()
+	{
+		return $this->params;
+	}
+
 	// reset all parameters related to externally configurable image output
 	public function resetImageParams()
 	{
