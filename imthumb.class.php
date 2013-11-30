@@ -67,7 +67,7 @@ class ImThumb
 		}
 
 		// set default width / height if none provided
-		if (!$this->param('width') && !$this->param('height')) {
+		if (!$this->param('width') && !$this->param('height') && !$this->params('cropRect')) {
 			$this->params['width'] = $this->params['height'] = 100;
 		}
 	}
@@ -295,12 +295,22 @@ class ImThumb
 		$canvas_trans = (bool)$this->param('canvasTransparent') && ($isPNG || $isGIF);
 		$canvas_color = $this->param('canvasColor');
 
-		// run crop / resize operation
 		list($new_width, $new_height) = $this->getTargetSize();
-		$this->processZoomCrop($new_width, $new_height,
-								(int)$this->param('cropMode'), abs($this->param('quality')), $this->param('align'),
-								(bool)$this->param('sharpen'),
-								$canvas_color, $canvas_trans);
+
+		// run crop / resize operation
+		if ($this->param('cropRect')) {
+			// Explicitly set crop coordinates.
+			// If width and height are provided, the resulting image is adjusted to fit within those dimensions as normal.
+			@list($startX, $startY, $endX, $endY) = explode(',', $this->param('cropRect'));
+			$this->processResizeCrop($new_width, $new_height, $startX, $startY, $endX, $endY,
+									(int)$this->param('cropMode'), $this->param('align'),
+									(bool)$this->param('sharpen'), $canvas_trans, $canvas_color);
+		} else {
+			// TimThumb style simplified crop operation
+			$this->processZoomCrop($new_width, $new_height,
+									(int)$this->param('cropMode'), $this->param('align'),
+									(bool)$this->param('sharpen'), $canvas_trans, $canvas_color);
+		}
 
 		// process any configured image filters
 		if ($this->param('filters')) {
@@ -338,19 +348,13 @@ class ImThumb
 		return $canvas;
 	}
 
-	protected function processZoomCrop($new_width, $new_height, $zoom_crop, $quality, $align, $sharpen, $canvas_color, $canvas_trans)
+	protected function processZoomCrop($new_width, $new_height, $zoom_crop = 3, $align = 'c', $sharpen = false, $canvas_trans = true, $canvas_color = 'ffffff')
 	{
-		// Get original width and height
-		$width = $this->imageHandle->getImageWidth();
-		$height = $this->imageHandle->getImageHeight();
-		$origin_x = 0;
-		$origin_y = 0;
+		list($width, $height, $new_width, $new_height) = $this->getSourceAndTargetDims($new_width, $new_height);
 
-		// generate new w/h if not provided
-		if ($new_width && !$new_height) {
-			$new_height = floor($height * ($new_width / $width));
-		} else if ($new_height && !$new_width) {
-			$new_width = floor($width * ($new_height / $height));
+		if ($width == $new_width && $height == $new_height) {
+			// already the correct size
+			return;
 		}
 
 		// perform requested cropping
@@ -363,8 +367,8 @@ class ImThumb
 
 				$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_trans ? null : $canvas_color, $this->mimeType);
 
-				$xOffset = ($new_width - $this->imageHandle->getImageWidth()) / 2;
-				$yOffset = ($new_height - $this->imageHandle->getImageHeight()) / 2;
+				$xOffset = ($new_width - $width) / 2;
+				$yOffset = ($new_height - $height) / 2;
 
 				$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, $xOffset, $yOffset);
 				$this->imageHandle = $canvas;
@@ -390,6 +394,38 @@ class ImThumb
 				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
 				break;
 		}
+	}
+
+	protected function processResizeCrop($new_width, $new_height, $startX, $startY, $endX, $endY, $zoom_crop = 3, $align = 'c', $sharpen = false, $canvas_trans = true, $canvas_color = 'ffffff')
+	{
+		list($width, $height, $new_width, $new_height) = $this->getSourceAndTargetDims($new_width, $new_height);
+
+		if ($startX < 0 || $startY < 0 || $endX > $width || $endY > $height) {
+			// if crop coords are outside of original image, we will need to add a background
+			$cropW = abs($endX - $startX);
+			$cropH = abs($endY - $startY);
+
+			$canvas = $this->generateNewCanvas($cropW, $cropH, $canvas_trans ? null : $canvas_color, $this->mimeType);
+
+			$xOffset = $startX < 0 ? abs($startX) : 0;
+			$yOffset = $startY < 0 ? abs($startY) : 0;
+
+			$startX = max($startX, 0);
+			$endX = min($endX, $width);
+			$startY = max($startY, 0);
+			$endY = min($endY, $height);
+
+			$this->imageHandle->cropImage(abs($endX - $startX), abs($endY - $startY), $startX, $startY);
+			$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, $xOffset, $yOffset);
+
+			$this->imageHandle = $canvas;
+		} else {
+			// otherwise we can just crop
+			$this->imageHandle->cropImage(abs($endX - $startX), abs($endY - $startY), $startX, $startY);
+		}
+
+		// handle the adjustments for W/H inside the target dimensions if the cropped area is not the size of the specified output
+		$this->processZoomCrop($new_width, $new_height, $zoom_crop, $align, $sharpen, $canvas_trans, $canvas_color);
 	}
 
 	protected function runFilters($filters)
@@ -439,10 +475,36 @@ class ImThumb
 
 	protected function getTargetSize()
 	{
-		$w = min(abs($this->param('width')), $this->param('maxw'));
-		$h = min(abs($this->param('height')), $this->param('maxh'));
+		$w = $this->param('width');
+		$h = $this->param('height');
+
+		if (!$w && !$h && $this->param('cropRect')) {
+			// if there are no target dimensions but there is a crop rect, use that size
+			@list($startX, $startY, $endX, $endY) = explode(',', $this->param('cropRect'));
+			$w = min(abs($endX - $startX), $this->param('maxw'));
+			$h = min(abs($endY - $startY), $this->param('maxh'));
+		} else {
+			$w = min(abs($w), $this->param('maxw'));
+			$h = min(abs($h), $this->param('maxh'));
+		}
 
 		return array($w, $h);
+	}
+
+	protected function getSourceAndTargetDims($new_width, $new_height)
+	{
+		// Get original width and height
+		$width = $this->imageHandle->getImageWidth();
+		$height = $this->imageHandle->getImageHeight();
+
+		// generate new w/h if not provided
+		if ($new_width && !$new_height) {
+			$new_height = floor($height * ($new_width / $width));
+		} else if ($new_height && !$new_width) {
+			$new_width = floor($width * ($new_height / $height));
+		}
+
+		return array($width, $height, $new_width, $new_height);
 	}
 
 	protected function getCropCoords($align, $origW, $origH, $destW, $destH)

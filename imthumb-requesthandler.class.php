@@ -28,6 +28,8 @@ abstract class ImthumbRequestHandler
 			'canvasColor' => self::readParam('cc', self::readConst('DEFAULT_CC', 'ffffff')),
 			'canvasTransparent' => (bool)self::readParam('ct', true),
 
+			'cropRect' => self::readParam('cr', null),
+
 			'filters' => self::readParam('f', self::readConst('DEFAULT_F', '')),
 
 			'fallbackImg' => self::readConst('ENABLE_NOT_FOUND_IMAGE', true) ? self::readConst('NOT_FOUND_IMAGE', true) : false,
