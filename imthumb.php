@@ -4,9 +4,6 @@
  *
  * A (mostly) timthumb-compatible image generation script using ImageMagick instead of GD
  *
- * General compatibility notes:
- * 	- Define the path to your base folder for serving images from with the constant 'IMTHUMB_BASEDIR'. This path should omit the trailing slash.
- *
  * Installation of ImageMagick can be performed as follows:
  * 	RedHat-based systems:
  * 		$ sudo yum install ImageMagick ImageMagick-devel php-devel php-pear gcc
