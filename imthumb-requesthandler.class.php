@@ -37,6 +37,7 @@ abstract class ImthumbRequestHandler
 			'maxh' => self::readConst('MAX_HEIGHT', 1500),
 
 			'maxSize' => self::readConst('MAX_FILE_SIZE', 10485760),
+			'memoryLimit' => self::readConst('MEMORY_LIMIT', false),
 			'externalAllowed' => !self::readConst('BLOCK_EXTERNAL_LEECHERS', false),
 			'rateLimiter' => self::readConst('IMTHUMB_RATE_LIMITER', false),
 
@@ -57,6 +58,15 @@ abstract class ImthumbRequestHandler
 
 		// set timezone if unset to avoid warnings
 		date_default_timezone_set(@date_default_timezone_get());
+
+		// set memory limit if required
+		if ($params['memoryLimit']) {
+			$inibytes = self::returnBytes(ini_get('memory_limit'));
+			$ourbytes = self::returnBytes($params['memoryLimit']);
+			if ($inibytes < $ourbytes) {
+				@ini_set('memory_limit', $params['memoryLimit']);
+			}
+		}
 
 		try {
 			// load up the configured rate limiter class, if any
@@ -133,14 +143,25 @@ abstract class ImthumbRequestHandler
 		}
 	}
 
-	private static function readParam($name, $default = null)
+	protected static function readParam($name, $default = null)
 	{
 		return isset($_GET[$name]) ? $_GET[$name] : $default;
 	}
 
-	private static function readConst($name, $default = null)
+	protected static function readConst($name, $default = null)
 	{
 		return defined($name) ? constant($name) : $default;
+	}
+
+	// from TimThumb
+	protected static function returnBytes($size_str)
+	{
+		switch (substr ($size_str, -1)) {
+			case 'M': case 'm': return (int)$size_str * 1048576;
+			case 'K': case 'k': return (int)$size_str * 1024;
+			case 'G': case 'g': return (int)$size_str * 1073741824;
+			default: return $size_str;
+		}
 	}
 
 	//--------------------------------------------------------------------------
