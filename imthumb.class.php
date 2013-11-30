@@ -286,14 +286,60 @@ class ImThumb
 			return false;
 		}
 
-		// get standard input properties
-		$zoom_crop = (int)$this->param('cropMode');
-		$quality = abs($this->param('quality'));
-		$align = $this->param('align');
-		$sharpen = (bool)$this->param('sharpen');
+		// each filetype needs to have some extra handling done
+		$isGIF = strpos($this->mimeType, 'gif') !== false;
+		$isJPEG = strpos($this->mimeType, 'jpeg') !== false;
+		$isPNG = strpos($this->mimeType, 'png') !== false;
 
+		// are we dealing with transparency?
+		$canvas_trans = (bool)$this->param('canvasTransparent') && ($isPNG || $isGIF);
+		$canvas_color = $this->param('canvasColor');
+
+		// run crop / resize operation
 		list($new_width, $new_height) = $this->getTargetSize();
+		$this->processZoomCrop($new_width, $new_height,
+								(int)$this->param('cropMode'), abs($this->param('quality')), $this->param('align'),
+								(bool)$this->param('sharpen'),
+								$canvas_color, $canvas_trans);
 
+		// process any configured image filters
+		if ($this->param('filters')) {
+			$this->runFilters($this->param('filters'));
+		}
+
+		// GIFs need final page dimensions processed or they retain original image canvas size
+		if ($isGIF) {
+			$this->imageHandle->setImagePage($new_width, $new_height, 0, 0);
+		}
+
+		// set progressive JPEG if desired
+		if ($isJPEG && $this->param('jpgProgressive')) {
+			$this->imageHandle->setInterlaceScheme(Imagick::INTERLACE_PLANE);
+		}
+
+		// set background colour if PNG transparency is disabled
+		if ($isPNG && $canvas_trans && !$this->param('pngTransparency')) {
+			$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_color, $this->mimeType);
+			$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, 0, 0);
+			$this->imageHandle = $canvas;
+		}
+
+		$this->compress();
+
+		return true;
+	}
+
+	protected function generateNewCanvas($new_width, $new_height, $bgColor = null, $mimeType = 'image/jpeg')
+	{
+		$canvas = new Imagick();
+		$canvas->newImage($new_width, $new_height, new ImagickPixel($bgColor ? '#' . $bgColor : 'transparent'));
+		$canvas->setImageFormat(str_replace('image/', '', $mimeType));
+
+		return $canvas;
+	}
+
+	protected function processZoomCrop($new_width, $new_height, $zoom_crop, $quality, $align, $sharpen, $canvas_color, $canvas_trans)
+	{
 		// Get original width and height
 		$width = $this->imageHandle->getImageWidth();
 		$height = $this->imageHandle->getImageHeight();
@@ -306,15 +352,6 @@ class ImThumb
 		} else if ($new_height && !$new_width) {
 			$new_width = floor($width * ($new_height / $height));
 		}
-
-		// GIFs need to have some extra handling done
-		$isGIF = strpos($this->mimeType, 'gif') !== false;
-		$isJPEG = strpos($this->mimeType, 'jpeg') !== false;
-		$isPNG = strpos($this->mimeType, 'png') !== false;
-
-		// are we dealing with transparency?
-		$canvas_trans = (bool)$this->param('canvasTransparent') && ($isPNG || $isGIF);
-		$canvas_color = $this->param('canvasColor');
 
 		// perform requested cropping
 		switch ($zoom_crop) {
@@ -353,64 +390,52 @@ class ImThumb
 				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
 				break;
 		}
+	}
 
-		// process any configured image filters
-		if ($this->param('filters')) {
-			require_once(dirname(__FILE__) . '/imthumb-filters.php');
+	protected function runFilters($filters)
+	{
+		require_once(dirname(__FILE__) . '/imthumb-filters.php');
 
-			$filterHandler = new ImThumbFilters($this->imageHandle);
+		$filterHandler = new ImThumbFilters($this->imageHandle);
 
-			$filters = explode('|', $this->param('filters'));
-			foreach ($filters as &$filterArgs) {
-				$filterArgs = explode(',', $filterArgs);
-				$filterName = trim(array_shift($filterArgs));
+		$filters = explode('|', $filters);
+		foreach ($filters as &$filterArgs) {
+			$filterArgs = explode(',', $filterArgs);
+			$filterName = trim(array_shift($filterArgs));
 
-				try {
-					if (is_numeric($filterName)) {
-						// process TimThumb filters
-						$filterHandler->timthumbFilter($filterName, $filterArgs);
-					} else {
-						// process Imagick filters
-						call_user_func_array(array($filterHandler, $filterName), $filterArgs);
-					}
-				} catch (ImThumbException $e) {
-					$this->critical("Problem with filter '{$filterName}': " . $e->getMessage());
-				} catch (ImagickException $e) {
-					$this->critical("Problem running filter '{$filterName}': " . $e->getMessage());
+			try {
+				if (is_numeric($filterName)) {
+					// process TimThumb filters
+					$filterHandler->timthumbFilter($filterName, $filterArgs);
+				} else {
+					// process Imagick filters
+					call_user_func_array(array($filterHandler, $filterName), $filterArgs);
 				}
+			} catch (ImThumbException $e) {
+				$this->critical("Problem running filter '{$filterName}': " . $e->getMessage());
+			} catch (ImagickException $e) {
+				$this->critical("Error in filter '{$filterName}': " . $e->getMessage());
 			}
 		}
-
-		// GIFs need final page dimensions processed or they retain original image canvas size
-		if ($isGIF) {
-			$this->imageHandle->setImagePage($new_width, $new_height, 0, 0);
-		}
-
-		// set progressive JPEG if desired
-		if ($isJPEG && $this->param('jpgProgressive')) {
-			$this->imageHandle->setInterlaceScheme(Imagick::INTERLACE_PLANE);
-		}
-
-		// set background colour if PNG transparency is disabled
-		if ($isPNG && $canvas_trans && !$this->param('pngTransparency')) {
-			$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_color, $this->mimeType);
-			$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, 0, 0);
-			$this->imageHandle = $canvas;
-		}
-
-		$this->compress();
-
-		return true;
 	}
 
-	protected function generateNewCanvas($new_width, $new_height, $bgColor = null, $mimeType = 'image/jpeg')
+	protected function compress()
 	{
-		$canvas = new Imagick();
-		$canvas->newImage($new_width, $new_height, new ImagickPixel($bgColor ? '#' . $bgColor : 'transparent'));
-		$canvas->setImageFormat(str_replace('image/', '', $mimeType));
+		if (strpos($this->mimeType, 'jpeg') !== false) {
+			if ($this->param('quality') == 100) {
+				$this->imageHandle->setImageCompression(Imagick::COMPRESSION_LOSSLESSJPEG);
+			} else {
+				$this->imageHandle->setImageCompression(Imagick::COMPRESSION_JPEG);
+			}
+		} else if (strpos($this->mimeType, 'png') !== false) {
+			$this->imageHandle->setImageCompression(Imagick::COMPRESSION_ZIP);
+		}
 
-		return $canvas;
+		$this->imageHandle->setImageCompressionQuality((double)$this->param('quality'));
+		$this->imageHandle->stripImage();
 	}
+
+	//--------------------------------------------------------------------------
 
 	protected function getTargetSize()
 	{
@@ -482,22 +507,6 @@ class ImThumb
 		}
 
 		return array($x, $y);
-	}
-
-	protected function compress()
-	{
-		if (strpos($this->mimeType, 'jpeg') !== false) {
-			if ($this->param('quality') == 100) {
-				$this->imageHandle->setImageCompression(Imagick::COMPRESSION_LOSSLESSJPEG);
-			} else {
-				$this->imageHandle->setImageCompression(Imagick::COMPRESSION_JPEG);
-			}
-		} else if (strpos($this->mimeType, 'png') !== false) {
-			$this->imageHandle->setImageCompression(Imagick::COMPRESSION_ZIP);
-		}
-
-		$this->imageHandle->setImageCompressionQuality((double)$this->param('quality'));
-		$this->imageHandle->stripImage();
 	}
 
 	//--------------------------------------------------------------------------
