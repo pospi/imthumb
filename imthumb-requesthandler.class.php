@@ -32,7 +32,7 @@ abstract class ImthumbRequestHandler
 			'fallbackColor' => self::readConst('COLOR_NOT_FOUND_IMAGE', '#FF7700'),
 			'errorColor' => self::readConst('COLOR_ERROR_IMAGE', '#FF0000'),
 
-			'pngTransparency' => self::readConst('PNG_IS_TRANSPARENT', false),
+			'pngTransparency' => self::readConst('PNG_IS_TRANSPARENT', true),
 			'jpgProgressive' => self::readParam('p', self::readConst('DEFAULT_PROGRESSIVE_JPEG', 1)),
 
 			'maxw' => self::readConst('MAX_WIDTH', 1500),

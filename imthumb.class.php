@@ -312,26 +312,24 @@ class ImThumb
 		$isJPEG = strpos($this->mimeType, 'jpeg') !== false;
 		$isPNG = strpos($this->mimeType, 'png') !== false;
 
+		// are we dealing with transparency?
+		$canvas_trans = (bool)$this->param('canvasTransparent') && ($isPNG || $isGIF);
+		$canvas_color = $this->param('canvasColor');
+
 		// perform requested cropping
 		switch ($zoom_crop) {
 			case 3:		// inner-fit
 				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
 				break;
 			case 2:		// inner-fill
-				$canvas_color = $this->param('canvasColor');
-				$canvas_trans = (bool)$this->param('canvasTransparent') && ($isPNG || $isGIF);
-
 				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
 
-				$canvas = new Imagick();
-				$canvas->newImage($new_width, $new_height, new ImagickPixel($canvas_trans ? 'transparent' : "#" . $canvas_color));
-				$canvas->setImageFormat(str_replace('image/', '', $this->mimeType));
+				$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_trans ? null : $canvas_color, $this->mimeType);
 
 				$xOffset = ($new_width - $this->imageHandle->getImageWidth()) / 2;
 				$yOffset = ($new_height - $this->imageHandle->getImageHeight()) / 2;
 
 				$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, $xOffset, $yOffset);
-				unset($this->imageHandle);
 				$this->imageHandle = $canvas;
 				break;
 			case 1:		// outer-fill
@@ -393,9 +391,25 @@ class ImThumb
 			$this->imageHandle->setInterlaceScheme(Imagick::INTERLACE_PLANE);
 		}
 
+		// set background colour if PNG transparency is disabled
+		if ($isPNG && $canvas_trans && !$this->param('pngTransparency')) {
+			$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_color, $this->mimeType);
+			$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, 0, 0);
+			$this->imageHandle = $canvas;
+		}
+
 		$this->compress();
 
 		return true;
+	}
+
+	protected function generateNewCanvas($new_width, $new_height, $bgColor = null, $mimeType = 'image/jpeg')
+	{
+		$canvas = new Imagick();
+		$canvas->newImage($new_width, $new_height, new ImagickPixel($bgColor ? '#' . $bgColor : 'transparent'));
+		$canvas->setImageFormat(str_replace('image/', '', $mimeType));
+
+		return $canvas;
 	}
 
 	protected function getTargetSize()
