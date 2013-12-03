@@ -108,6 +108,7 @@ class ImThumb
 			$this->params['canvasColor'],
 			$this->params['canvasTransparent'],
 			$this->params['filters'],
+			$this->params['cropRect'],
 			$this->params['jpgProgressive']
 		);
 	}
