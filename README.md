@@ -30,7 +30,7 @@ The following additional features are provided by ImThumb in addition to baselin
 
 The following features work differently or are otherwise incompatible with TimThumb. You might want to stick to it if you depend on any of these things:
 
-* Progressive JPEGs are saved by default unless the parameter `p` is explicitly set to `0`.
+* Progressive JPEGs are saved by default unless reconfigured or the parameter `p` is explicitly set to `0`.
 * I decided to expose some timing and cache stats as well as an X-Generator header in responses by default as ImageMagick can be a resource-heavy library and these things are good to know. You can disable this behaviour by defining a constant - `define('SKIP_IMTHUMB_HEADERS', true);`.
 * Error images are rendered to the exact dimensions of the requested image, rather than being returned as-is.
 
@@ -45,7 +45,7 @@ As with TimThumb, configuration is managed by constants defined in a config file
 * By default, ImThumb will always render an image if an error occurs, even if no fallbacks are configured. Due to the difference, some additional constants may be used:
 	* `ENABLE_NOT_FOUND_IMAGE` and `ENABLE_ERROR_IMAGE` can be set to `false` to restore plaintext error output and default TimThumb functionality. Broken images will appear as broken X's on your pages.
 	* `COLOR_NOT_FOUND_IMAGE` and `COLOR_ERROR_IMAGE` are used to control the colours displayed for the two, err, fallback fallback images.
-* `FILE_CACHE_FILENAME_FORMAT` - use this option to specify a format string for writing files to the cache. This can be used for example to permanently generate images for use by other services or in backups. The sprintf format it takes can include any of the following: `%filename%-%w%x%h%x%q%-%zc%%a%%s%%cc%%ct%%filters%%pjpg%.%ext%`, but you need not include all parameters if you will not be using them all.
+* `FILE_CACHE_FILENAME_FORMAT` - use this option to specify a format string for writing files to the cache. This can be used for example to permanently generate images for use by other services or in backups. The wildcard format it takes can include any of the following: `%filename%-%w%x%h%x%q%-%zc%%a%%s%%cc%%ct%%filters%%pjpg%.%ext%`, but you need not include all parameters if you will not be using them all.
 * `IMTHUMB_RATE_LIMITER` - defines the name of a loaded class to be instantiated for controlling [rate limiting](#implementing-rate-limiting).
 
 ##### Unimplemented constants:
@@ -60,9 +60,9 @@ ImThumb takes the same parameters as TimThumb for the most part - these control 
 
 To provide simple integration for any custom rate limiting system, the `ImThumbRateLimiter` class provided allows you to integrate your own logic for managing limits on image generation. The only method you need implement is `checkRateLimits()`, which returns `true` to indicate that the generation may proceed and `false` if the rate limit has been exceeded. `ImThumbRateLimiter` objects provide a `$generator` member for interrogating the `ImThumb` instance being processed. The new `IMTHUMB_RATE_LIMITER` configuration constant corresponds to the pre-included classname which will be initialised to control rate limiting on the script. I have also provided `IMTHUMB_RATE_LIMIT_MSG` to control the error HTML that a user sees after exceeding rate limits.
 
-Of course to use this functionality you will need to create a separate entrypoint script that loads up your custom rate limiter class and then boots up `imthumb.php`. You do not need to worry about making `imthumb.php` web inaccessible as it is programmed to die (and log the remote IP to the PHP error log) if it has been given configuration for a rate limiter class that does not exist. These scripts will essentially be a case of including the interface class, defining your own custom class & loading whatever framework is needed to support it, and finally including `imthumb.php` which will load up its configuration file and continue on from there.
+Of course to use this functionality you will need to create a separate entrypoint script that loads up your custom rate limiter class and then boots up `imthumb.php`. You do not need to worry about making `imthumb.php` web inaccessible as it is programmed to die (and log the remote IP to the PHP error log) if it has been given configuration for a rate limiter class that does not exist. These scripts will essentially be a case of including the interface class, defining your own custom class & loading whatever framework is needed to support it, and finally including `imthumb.php` which will load up its configuration file and continue on from there. There is an example provided at [example/rate-limited-loader.php](example/rate-limited-loader.php).
 
-If you don't need access to the data from the ImThumb instance to determine your limits, then this framework is purely academic and you can simply create your own script and check for exceeded limits before even loading the main script. Its purpose is more geared toward online services performing batch image generation; and of course demoing the thing without killing your webserver :p
+If you don't need access to the data from the ImThumb instance to determine your limits, then this framework is purely academic and you can simply create your own script and check for exceeded limits before even loading the main script. Its purpose is more geared toward online services performing batch image generation or weighting filters based on their relative complexity; and of course demoing the thing without killing your webserver :p
 
 Disclaimer: Note that session-level rate limiting can be circumvented by attackers simply by starting a new session on each request. In order to properly guard against sustained server abuse of this kind one really needs to have something active at a webserver level.
 
@@ -83,3 +83,5 @@ Initially developed at [Map Creative](http://mapcreative.com.au).
 * Extension for processing external images
 * Addon for webpage rendering
 * Support for ImageMagick 3 and under in 'inner fit' and 'inner fill' crop modes
+* Fallback fallback images: render text
+* Fix filter compatibility on some mismatched filters
