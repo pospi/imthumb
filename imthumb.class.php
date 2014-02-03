@@ -111,6 +111,9 @@ class ImThumb
 			$this->params['cropRect'],
 			$this->params['jpgProgressive']
 		);
+
+		$this->params['width'] = 100;
+		$this->params['height'] = 100;
 	}
 
 	public function configureUnalteredFitImage()
