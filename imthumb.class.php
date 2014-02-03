@@ -385,12 +385,15 @@ class ImThumb
 				} else {
 					$ratio = $new_height / $height;
 				}
+				$x = $y = 0;
 				$tempW = $width * $ratio;
 				$tempH = $height * $ratio;
 
-				$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
-
-				list($x, $y) = $this->getCropCoords($align, $tempW, $tempH, $new_width, $new_height);
+				if ($tempW && $tempH) {
+					// :NOTE: guard against invalid source image returning a ratio of 0
+					$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
+					list($x, $y) = $this->getCropCoords($align, $tempW, $tempH, $new_width, $new_height);
+				}
 
 				$this->imageHandle->cropImage($new_width, $new_height, $x, $y);
 				break;
