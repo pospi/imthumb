@@ -662,10 +662,12 @@ class ImThumb
 
 	public function display()
 	{
-		$this->sendHeaders();
-
 		$str = $this->getImage();
-		echo $str;
+
+		if ($str) {
+			$this->sendHeaders();
+			echo $str;
+		}
 
 		return $str ? true : false;
 	}
