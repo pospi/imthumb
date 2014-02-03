@@ -174,11 +174,11 @@ class ImThumb
 		}
 
 		if ($this->mimeType == 'image/jpeg') {
-			$this->imageHandle->setFormat('jpg');
+			$this->imageHandle->setImageFormat('jpg');
 		} else if ($this->mimeType == 'image/gif') {
-			$this->imageHandle->setFormat('gif');
+			$this->imageHandle->setImageFormat('gif');
 		} else if ($this->mimeType == 'image/png') {
-			$this->imageHandle->setFormat('png');
+			$this->imageHandle->setImageFormat('png');
 		}
 	}
 
@@ -249,7 +249,8 @@ class ImThumb
 
 		// not configured.. show coloured square
 		$this->imageHandle->newImage($fallbackW, $fallbackH, new ImagickPixel($fallbackColor));
-		$this->imageHandle->setFormat('jpg');
+		$this->imageHandle->setImageFormat('jpg');
+
 		$this->mimeType = 'image/jpeg';
 		return false;
 	}
