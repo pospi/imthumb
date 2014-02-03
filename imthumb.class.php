@@ -26,6 +26,8 @@ class ImThumb
 	public static $HAS_MBSTRING;	// used for reliable image length determination. Initialised below class def'n.
 	public static $MBSTRING_SHADOW;
 
+	const DEFAULT_SIZE = 100;		// if invalid dimensions are passed, this will be used
+
 	//--------------------------------------------------------------------------
 	// Initialisation & configuration
 
@@ -68,7 +70,7 @@ class ImThumb
 
 		// set default width / height if none provided
 		if (!$this->param('width') && !$this->param('height') && !$this->params('cropRect')) {
-			$this->params['width'] = $this->params['height'] = 100;
+			$this->params['width'] = $this->params['height'] = self::DEFAULT_SIZE;
 		}
 	}
 
@@ -112,8 +114,8 @@ class ImThumb
 			$this->params['jpgProgressive']
 		);
 
-		$this->params['width'] = 100;
-		$this->params['height'] = 100;
+		$this->params['width'] = self::DEFAULT_SIZE;
+		$this->params['height'] = self::DEFAULT_SIZE;
 	}
 
 	public function configureUnalteredFitImage()
@@ -245,6 +247,13 @@ class ImThumb
 
 		if ($imagePath === false) {
 			return false;
+		}
+
+		if (!$fallbackW) {
+			$fallbackW = self::DEFAULT_SIZE;
+		}
+		if (!$fallbackH) {
+			$fallbackH = self::DEFAULT_SIZE;
 		}
 
 		// not configured.. show coloured square
@@ -386,15 +395,12 @@ class ImThumb
 				} else {
 					$ratio = $new_height / $height;
 				}
-				$x = $y = 0;
 				$tempW = $width * $ratio;
 				$tempH = $height * $ratio;
 
-				if ($tempW && $tempH) {
-					// :NOTE: guard against invalid source image returning a ratio of 0
-					$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
-					list($x, $y) = $this->getCropCoords($align, $tempW, $tempH, $new_width, $new_height);
-				}
+				$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
+
+				list($x, $y) = $this->getCropCoords($align, $tempW, $tempH, $new_width, $new_height);
 
 				$this->imageHandle->cropImage($new_width, $new_height, $x, $y);
 				break;
@@ -496,6 +502,10 @@ class ImThumb
 			$h = min(abs($h), $this->param('maxh'));
 		}
 
+		if (!$w && !$h) {
+			$w = $h = self::DEFAULT_SIZE;
+		}
+
 		return array($w, $h);
 	}
 
@@ -510,6 +520,10 @@ class ImThumb
 			$new_height = floor($height * ($new_width / $width));
 		} else if ($new_height && !$new_width) {
 			$new_width = floor($width * ($new_height / $height));
+		}
+
+		if (!$width && !$height) {
+			$width = $height = self::DEFAULT_SIZE;
 		}
 
 		return array($width, $height, $new_width, $new_height);
