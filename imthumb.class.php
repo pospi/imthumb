@@ -143,7 +143,7 @@ class ImThumb
 		}
 
 		if ($src) {
-			if ($this->param('cache') && ($cachemtime = @filemtime($this->getCachePath()))) {
+			if ($this->param('cache') && ($cachemtime = @filemtime($this->getCachePath($src)))) {
 				$this->loadImageMeta($src);
 				// expire caches when source images are updated
 				if ($this->mtime > $cachemtime) {
@@ -812,13 +812,17 @@ class ImThumb
 		return false;
 	}
 
-	private function getCachePath()
+	private function getCachePath($src = null)
 	{
 		$cacheDir = $this->param('cache');
 
 		if (!$cacheDir) {
 			return false;
 		}
+		if (!$src) {
+			$src = $this->src;
+		}
+		$extension = substr($src, strrpos($src, '.') + 1);
 
 		if ($this->param('cacheFilenameFormat')) {
 			list($width, $height) = $this->getTargetSize();
@@ -837,8 +841,8 @@ class ImThumb
 				'%filters%',
 				'%pjpg%',
 			), array(
-				basename($this->src, '.' . $this->imageExt),
-				$this->imageExt,
+				basename($src, '.' . $extension),
+				$extension,
 				$width,
 				$height,
 				$this->param('quality'),
