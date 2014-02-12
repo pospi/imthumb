@@ -18,12 +18,12 @@ class ImThumbFilters
 		2 => array('modulateImage', array(100, 0, 100)),	// greyscale
 		3 => array('modulateImage', array(100, 100, 100)),	// brightness
 		4 => array('levelImage',	array(0, 1, 0)),		// contrast
-		5 => array('colorizeImage', array('FF0000', 1)),	// colorize
-		6 => array('edgeImage', 	array(2)),				// detect edges
+		5 => array('colorizeImage', array('#FF0000', 1)),	// colorize
+		6 => array('edgeImage', 	array(0.001)),			// detect edges
 		7 => array('embossImage', 	array(0, 0.5)),		// emboss
 		8 => array('gaussianBlurImage', array(0, 0.5)),	// gaussian blur
 		9 => array('blurImage',		array(0, 0.5)),		// selective blur
-		10 => array('sketchImage',	array(0, 0.5, 45)),	// image mean removal..?
+		10 => array('sketchImage',	array(15,10,45)),	// image mean removal..?
 		11 => array('medianFilterImage', array(2)),		// smooth
 	);
 
