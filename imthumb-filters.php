@@ -192,14 +192,35 @@ class ImThumbFilters
 			}
 		}
 
-		// merge defaults
-		foreach (self::$IMAGE_FILTER_IDS[$id][1] as $arg => $val) {
-			if (!isset($args[$arg])) {
-				$args[$arg] = $val;
-			};
+		$baseArgs = $args;
+
+		// read single or mutliple filters & args to apply, and execute all
+		if (is_array(self::$IMAGE_FILTER_IDS[$id][0])) {
+			foreach (self::$IMAGE_FILTER_IDS[$id] as $callback) {
+				// merge args with defaults
+				foreach ($callback[1] as $arg => $val) {
+					if (!isset($args[$arg])) {
+						$args[$arg] = $val;
+					}
+				}
+
+				// call each filter in turn. only last return value will be passed to caller
+				$lastResult = call_user_func_array(array($this, $callback[0]), $args);
+				$args = $baseArgs;
+			}
+		} else {
+			// merge aargs with defaults
+			foreach (self::$IMAGE_FILTER_IDS[$id][1] as $arg => $val) {
+				if (!isset($args[$arg])) {
+					$args[$arg] = $val;
+				}
+			}
+
+			// run single filter
+			$lastResult = call_user_func_array(array($this, self::$IMAGE_FILTER_IDS[$id][0]), $args);
 		}
 
-		return call_user_func_array(array($this, self::$IMAGE_FILTER_IDS[$id][0]), $args);
+		return $lastResult;
 	}
 
 	//--------------------------------------------------------------------------
