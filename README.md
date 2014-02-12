@@ -33,6 +33,12 @@ The following features work differently or are otherwise incompatible with TimTh
 * Progressive JPEGs are saved by default unless reconfigured or the parameter `p` is explicitly set to `0`.
 * I decided to expose some timing and cache stats as well as an X-Generator header in responses by default as ImageMagick can be a resource-heavy library and these things are good to know. You can disable this behaviour by defining a constant - `define('SKIP_IMTHUMB_HEADERS', true);`.
 * Error images are rendered to the exact dimensions of the requested image, rather than being returned as-is.
+* Filter related:
+    * Brightness & contrast filters are a little more severe with the Imagick methods currently used than they were with TimThumb.
+    * The tint filter seems ramped exponentially rather than linearly, and so is less extreme at lower colour values.
+    * Edge outlining renders on a black background, rather than the grey provided by TimThumb. Haven't found an appropriate replacement method yet.
+    * When reapplying the gaussian blur filter as in the [TimThumb examples](http://www.binarymoon.co.uk/2010/08/timthumb-image-filters/), blur increases much quicker than originally. The filter will accept [additional arguments](http://au1.php.net/manual/en/imagick.gaussianblurimage.php) in the case of ImThumb however, to control its intensity. The same applies to the selective blur algorithm used.
+    * Since filter 10 is documented as a sketch filter, I opted to use a stroked sketch effect to render the image.
 
 ### Configuration
 
