@@ -374,6 +374,8 @@ class ImThumb
 		// perform requested cropping
 		switch ($zoom_crop) {
 			case 3:		// inner-fit
+				$new_width = min($new_width, $width);
+				$new_height = min($new_height, $height);
 				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
 				break;
 			case 2:		// inner-fill
