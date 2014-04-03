@@ -64,7 +64,7 @@ class ImthumbHTTP
 			$imVer = Imagick::getVersion();
 			header('X-Generator: ImThumb v' . ImThumb::VERSION . '; ' . $imVer['versionString']);
 
-			if ($this->image->cache) {
+			if ($this->image->cache && $this->image->cache->isCached()) {
 				header('X-Img-Cache: HIT');
 			} else {
 				header('X-Img-Cache: MISS');
