@@ -11,13 +11,15 @@ abstract class ImthumbRequestHandler
 {
 	public static $DOCROOT;
 
-	public static function processRequest()
+	/**
+	 * Read input request parameters and configuration variables / constants from TimThumb configuration files.
+	 */
+	public static function readParams()
 	{
-		// avoid timezone setting warnings
-		date_default_timezone_set(@date_default_timezone_get());
+		global $ALLOWED_SITES;
 
 		// build params for the class
-		$params = array(
+		return array(
 			'src' => self::readParam('src'),
 			'width' => self::readParam('w', null),
 			'height' => self::readParam('h', null),
@@ -64,6 +66,12 @@ abstract class ImthumbRequestHandler
 			'silent' => self::readConst('SKIP_IMTHUMB_HEADERS', false),	// by default we send generator and timing stats in response headers
 			'debug' => self::readConst('SHOW_DEBUG_STATS', false),		// show timing and resource usage statistics in HTTP headers
 		);
+	}
+
+	public static function processRequest(Array $params)
+	{
+		// avoid timezone setting warnings
+		date_default_timezone_set(@date_default_timezone_get());
 
 		// set timezone if unset to avoid warnings
 		date_default_timezone_set(@date_default_timezone_get());
