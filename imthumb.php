@@ -31,5 +31,5 @@ require_once('imthumb-http.class.php');
 require_once('imthumb.class.php');
 
 // run the script!
-ImthumbRequestHandler::processRequest(ImthumbRequestHandler::readParams());
+ImThumbRequestHandler::processRequest(ImThumbRequestHandler::readParams());
 exit(0);

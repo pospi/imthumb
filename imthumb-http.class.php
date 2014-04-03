@@ -7,7 +7,7 @@
  * @since	2014-04-03
  */
 
-class ImthumbHTTP
+class ImThumbHTTP
 {
 	protected $image;
 

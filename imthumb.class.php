@@ -42,7 +42,7 @@ class ImThumb
 
 	private $isValidSrc = true;
 
-	public $cache;	// ImthumbCache instance
+	public $cache;	// ImThumbCache instance
 
 	private $startTime;	// stats
 	private $startCPU;
@@ -314,7 +314,7 @@ class ImThumb
 		}
 
 		require_once(dirname(__FILE__) . '/imthumb-requesthandler.class.php');
-		return realpath(ImthumbRequestHandler::getDocRoot() . $src);
+		return realpath(ImThumbRequestHandler::getDocRoot() . $src);
 	}
 
 	//--------------------------------------------------------------------------
@@ -671,7 +671,7 @@ class ImThumb
 
 		require_once(dirname(__FILE__) . '/imthumb-cache.class.php');
 
-		$this->cache = new ImthumbCache($cachePath, array(
+		$this->cache = new ImThumbCache($cachePath, array(
 			'cacheCleanPeriod' => $this->param('cacheCleanPeriod'),
 			'cacheMaxAge' => $this->param('cacheMaxAge'),
 

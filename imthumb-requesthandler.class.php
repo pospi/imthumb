@@ -7,7 +7,7 @@
  * @since	2013-11-16
  */
 
-abstract class ImthumbRequestHandler
+abstract class ImThumbRequestHandler
 {
 	public static $DOCROOT;
 
@@ -98,7 +98,7 @@ abstract class ImthumbRequestHandler
 				$params['rateLimiter'] = new $limiter();
 			}
 			$handler = new ImThumb($params);
-			$http = new ImthumbHTTP($handler);
+			$http = new ImThumbHTTP($handler, $params);
 
 			// check for rate limiting
 			$handler->checkRateLimits();
