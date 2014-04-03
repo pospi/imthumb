@@ -70,9 +70,6 @@ abstract class ImthumbRequestHandler
 
 	public static function processRequest(Array $params)
 	{
-		// avoid timezone setting warnings
-		date_default_timezone_set(@date_default_timezone_get());
-
 		// set timezone if unset to avoid warnings
 		date_default_timezone_set(@date_default_timezone_get());
 
