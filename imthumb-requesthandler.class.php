@@ -107,9 +107,11 @@ abstract class ImthumbRequestHandler
 			}
 
 			// check and write to caches
-			if (!$handler->writeToCache()) {
+			if (!$handler->writeCache()) {
 				// check cache directory for expired content if we processed an already cached image
-				$handler->checkExpiredCaches();
+				if ($handler->cache) {
+					$handler->cache->checkExpiredCaches();
+				}
 			}
 
 			// output the image and all headers

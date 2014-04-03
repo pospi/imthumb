@@ -42,7 +42,7 @@ class ImThumb
 
 	private $isValidSrc = true;
 
-	private $hasCache = false;
+	public $cache;	// ImthumbCache instance
 
 	private $startTime;	// stats
 	private $startCPU;
@@ -96,6 +96,16 @@ class ImThumb
 		return $this->params;
 	}
 
+	public function getSrc()
+	{
+		return $this->src;
+	}
+
+	public function getImagick()
+	{
+		return $this->imageHandle;
+	}
+
 	// reset all parameters related to externally configurable image output
 	public function resetImageParams()
 	{
@@ -143,14 +153,17 @@ class ImThumb
 		}
 
 		if ($src) {
-			if ($this->param('cache') && ($cachemtime = @filemtime($this->getCachePath($src)))) {
+			$this->cache = null;
+
+			if ($this->initCache()) {
 				$this->loadImageMeta($src);
+				$this->cache->load($this);
+
 				// expire caches when source images are updated
-				if ($this->mtime > $cachemtime) {
+				if ($this->mtime > $this->cache->mtime) {
 					$this->loadImageFile($src);
 					$this->doResize();
-				} else {
-					$this->hasCache = true;
+					$this->cache->isCached(false);
 				}
 			} else {
 				$this->loadImageFile($src);
@@ -189,7 +202,7 @@ class ImThumb
 		$src = $this->getRealImagePath($src);
 
 		$this->mtime = @filemtime($src);
-		if (!$this->mtime) {
+		if (false === $this->mtime) {
 			$this->isValidSrc = false;
 			return;
 		}
@@ -489,7 +502,7 @@ class ImThumb
 
 	//--------------------------------------------------------------------------
 
-	protected function getTargetSize()
+	public function getTargetSize()
 	{
 		$w = $this->param('width');
 		$h = $this->param('height');
@@ -643,7 +656,7 @@ class ImThumb
 			$imVer = Imagick::getVersion();
 			header('X-Generator: ImThumb v' . self::VERSION . '; ' . $imVer['versionString']);
 
-			if ($this->hasCache) {
+			if ($this->cache) {
 				header('X-Img-Cache: HIT');
 			} else {
 				header('X-Img-Cache: MISS');
@@ -676,10 +689,10 @@ class ImThumb
 
 	public function getImage()
 	{
-		$cachePath = $this->getCachePath();
+		$cachedImage = $this->cache ? $this->cache->getImage($this) : false;
 
-		if ($cachePath && file_exists($cachePath)) {
-			return file_get_contents($cachePath);
+		if ($cachedImage) {
+			return $cachedImage;
 		}
 
 		try {
@@ -700,13 +713,53 @@ class ImThumb
 		}
 	}
 
-	public function hasBrowserCache($modifiedSince = null)
+	//--------------------------------------------------------------------------
+	// Caching
+
+	public function initCache()
+	{
+		if (!($cachePath = $this->param('cache'))) {
+			return false;
+		}
+
+		require_once(dirname(__FILE__) . '/imthumb-cache.class.php');
+
+		$this->cache = new ImthumbCache($cachePath, array(
+			'cacheCleanPeriod' => $this->param('cacheCleanPeriod'),
+			'cacheMaxAge' => $this->param('cacheMaxAge'),
+
+			'cachePrefix' => $this->param('cachePrefix'),
+			'cacheSalt' => $this->param('cacheSalt'),
+			'cacheSuffix' => $this->param('cacheSuffix'),
+			'cacheFilenameFormat' => $this->param('cacheFilenameFormat'),
+		));
+
+		return true;
+	}
+
+	public function getCache()
+	{
+		return $this->cache;
+	}
+
+	public function writeCache()
+	{
+		if (!$this->cache) {
+			return false;
+		}
+
+		$this->cache->write($this);
+
+		return true;
+	}
+
+	public function hasbrowserCache($modifiedSince = null)
 	{
 		if (!$modifiedSince) {
 			$modifiedSince = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? $_SERVER['HTTP_IF_MODIFIED_SINCE'] : false;
 		}
 
-		if ($this->mtime <= 0 || !$this->param('browserCache') || empty($modifiedSince)) {
+		if ($this->mtime <= 0 || !$this->param('doBrowserCache') || empty($modifiedSince)) {
 			return false;
 		}
 
@@ -714,151 +767,7 @@ class ImThumb
 			$modifiedSince = strtotime($modifiedSince);
 		}
 
-		if ($modifiedSince < $this->mtime) {
-			return false;
-		}
-		return true;
-	}
-
-	//--------------------------------------------------------------------------
-	// Caching
-
-	public function initCacheDir()
-	{
-		$cacheDir = $this->param('cache');
-		if (!$cacheDir) {
-			return;
-		}
-
-		if (!touch($cacheDir . '/index.html')) {
-			$this->critical("Could not create the index.html file - to fix this create an empty file named index.html file in the cache directory.", self::ERR_CACHE);
-		}
-	}
-
-	public function writeToCache()
-	{
-		if ($this->hasCache || !$this->param('cache')) {
-			return false;
-		}
-
-		$this->initCacheDir();
-
-		$tempfile = tempnam($this->param('cache'), 'imthumb_tmpimg_');
-
-		if (!$this->imageHandle->writeImage($tempfile)) {
-			$this->critical("Could not write image to temporary file", self::ERR_CACHE);
-		}
-
-		$cacheFile = $this->getCachePath();
-		$lockFile = $cacheFile . '.lock';
-
-		$fh = fopen($lockFile, 'w');
-		if (!$fh) {
-			$this->critical("Could not open the lockfile for writing an image", self::ERR_CACHE);
-		}
-
-		if (flock($fh, LOCK_EX)) {
-			@unlink($cacheFile);
-			rename($tempfile, $cacheFile);
-			flock($fh, LOCK_UN);
-			fclose($fh);
-			@unlink($lockFile);
-		} else {
-			fclose($fh);
-			@unlink($lockFile);
-			@unlink($tempfile);
-			$this->critical("Could not get a lock for writing", self::ERR_CACHE);
-		}
-
-		return true;
-	}
-
-	public function checkExpiredCaches()
-	{
-		$cacheDir = $this->param('cache');
-		$cacheExpiry = $this->param('cacheCleanPeriod');
-		if (!$cacheDir || !$cacheExpiry || $cacheExpiry < 0) {
-			return;
-		}
-
-		$lastCleanFile = $cacheDir . '/timthumb_cacheLastCleanTime.touch';
-
-		// If this is a new installation we need to create the file
-		if (!is_file($lastCleanFile)) {
-			if (!touch($lastCleanFile)) {
-				$this->critical("Could not create cache clean timestamp file.", self::ERR_CACHE);
-			}
-		}
-
-		// check for last auto-purge time
-		if (@filemtime($lastCleanFile) < (time() - $cacheExpiry)) {
-			// :NOTE: (from timthumb) Very slight race condition here, but worst case we'll have 2 or 3 servers cleaning the cache simultaneously once a day.
-			if (!touch($lastCleanFile)) {
-				$this->error("Could not create cache clean timestamp file.");
-			}
-
-			$maxAge = $this->param('cacheMaxAge');
-			$files = glob($this->cacheDirectory . '/*' . $this->param('cacheSuffix'));
-
-			if ($files) {
-				$timeAgo = time() - $maxAge;
-				foreach ($files as $file) {
-					if (@filemtime($file) < $timeAgo) {
-						@unlink($file);
-					}
-				}
-			}
-			return true;
-		}
-
-		return false;
-	}
-
-	private function getCachePath($src = null)
-	{
-		$cacheDir = $this->param('cache');
-
-		if (!$cacheDir) {
-			return false;
-		}
-		if (!$src) {
-			$src = $this->src;
-		}
-		$extension = substr($src, strrpos($src, '.') + 1);
-
-		if ($this->param('cacheFilenameFormat')) {
-			list($width, $height) = $this->getTargetSize();
-
-			return $cacheDir . '/' . str_replace(array(
-				'%filename%',
-				'%ext%',
-				'%w%',
-				'%h%',
-				'%q%',
-				'%a%',
-				'%zc%',
-				'%s%',
-				'%cc%',
-				'%ct%',
-				'%filters%',
-				'%pjpg%',
-			), array(
-				basename($src, '.' . $extension),
-				$extension,
-				$width,
-				$height,
-				$this->param('quality'),
-				$this->param('align'),
-				$this->param('cropMode'),
-				$this->param('sharpen') ? 's' : '',
-				$this->param('canvasColor'),
-				$this->param('canvasTransparent') ? 't' : '',
-				$this->param('filters'),
-				$this->param('jpgProgressive') ? 'p' : '',
-			), $this->param('cacheFilenameFormat'));
-		}
-
-		return $cacheDir . '/' . $this->param('cachePrefix') . md5($this->param('cacheSalt') . implode('', $this->params) . self::VERSION) . $this->param('cacheSuffix');
+		return $modifiedSince >= $this->mtime;
 	}
 
 	//--------------------------------------------------------------------------
