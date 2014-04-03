@@ -9,7 +9,7 @@
 
 class ImthumbCache
 {
-	private $defaults = array(
+	private static $defaults = array(
 		'cacheCleanPeriod' => 86400,
 		'cacheMaxAge' => 86400,
 
@@ -38,7 +38,7 @@ class ImthumbCache
 	public function __construct($baseDir, Array $options) {
 		$this->baseDir = $baseDir;
 
-		$options = array_merge($this->defaults, $options);
+		$options = array_merge(self::$defaults, $options);
 
 		// :IMPORTANT: do not ever allow external user input to find its way into these options as it would allow overriding random member variables
 		foreach ($options as $k => $v) {
