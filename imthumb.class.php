@@ -82,6 +82,8 @@ class ImThumb
 		}
 	}
 
+	// -- simple accessors --
+
 	public function param($name, $val = null)
 	{
 		if (isset($val)) {
@@ -96,6 +98,16 @@ class ImThumb
 		return $this->params;
 	}
 
+	public function isValid()
+	{
+		return $this->isValidSrc;
+	}
+
+	public function getMime()
+	{
+		return $this->mimeType;
+	}
+
 	public function getSrc()
 	{
 		return $this->src;
@@ -105,6 +117,17 @@ class ImThumb
 	{
 		return $this->imageHandle;
 	}
+
+	public function getTimingStats()
+	{
+		return array(
+			$this->startTime,
+			$this->startCPU[0],
+			$this->startCPU[1]
+		);
+	}
+
+	// -- simple mutators --
 
 	// reset all parameters related to externally configurable image output
 	public function resetImageParams()
