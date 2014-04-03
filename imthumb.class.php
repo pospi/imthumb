@@ -748,9 +748,7 @@ class ImThumb
 			return false;
 		}
 
-		$this->cache->write($this);
-
-		return true;
+		return $this->cache->write($this);
 	}
 
 	public function hasbrowserCache($modifiedSince = null)
