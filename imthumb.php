@@ -27,6 +27,7 @@ if (file_exists(dirname(dirname(__FILE__)) . '/timthumb-config.php'))	{
 }
 
 require_once('imthumb-requesthandler.class.php');
+require_once('imthumb-http.class.php');
 require_once('imthumb.class.php');
 
 // run the script!

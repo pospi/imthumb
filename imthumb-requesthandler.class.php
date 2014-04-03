@@ -93,6 +93,7 @@ abstract class ImthumbRequestHandler
 				$params['rateLimiter'] = new $limiter();
 			}
 			$handler = new ImThumb($params);
+			$http = new ImthumbHTTP($handler);
 
 			// check for rate limiting
 			$handler->checkRateLimits();
@@ -102,7 +103,7 @@ abstract class ImthumbRequestHandler
 
 			// check for browser cache
 			if ($handler->hasBrowserCache()) {
-				$handler->sendHeaders();
+				$http->sendHeaders();
 				exit(0);
 			}
 
@@ -115,7 +116,7 @@ abstract class ImthumbRequestHandler
 			}
 
 			// output the image and all headers
-			if (!$handler->display()) {
+			if (!$http->display()) {
 				// nothing to display, we aren't configured to show any fallback 404 image
 				throw new ImThumbCriticalException("Source image not found. Source querystring: {$_SERVER['QUERY_STRING']}", ImThumb::ERR_SERVER_CONFIG);
 			}
@@ -144,7 +145,7 @@ abstract class ImthumbRequestHandler
 			if (!$theImage) {
 				throw $e;
 			}
-			$handler->sendHeaders($msg);
+			$http->sendHeaders($msg);
 			echo $theImage;
 			exit(0);
 		}
