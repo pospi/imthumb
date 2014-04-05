@@ -727,7 +727,8 @@ class ImThumb
 
 		// if allow all is set, any HTTP(s) URL can be vetoed immediately
 		if ($this->params['allowAllExternal'] && $isHTTP) {
-			return 'ImThumbAssetLoader_HTTP';
+			self::loadSourceHandler('ImThumbSource_HTTP');
+			return 'ImThumbSource_HTTP';
 		}
 
 		// map regexes to handler classes on first run
@@ -741,9 +742,14 @@ class ImThumb
 		}
 
 		// process all URI matches & return an appropriate handler if one is found
-		foreach ($this->uriMatches as $uri => $handlerClass) {
-			if (preg_match($uri, $src)) {
-				return $handlerClass;
+		if ($this->uriMatches) {
+			foreach ($this->uriMatches as $uri => $handlerClass) {
+				if (preg_match($uri, $src)) {
+					if (!self::loadSourceHandler($handlerClass)) {
+						$this->critical('Could not load source handler \'' . $handlerClass . '\'', self::ERR_SERVER_CONFIG);
+					}
+					return $handlerClass;
+				}
 			}
 		}
 
@@ -755,13 +761,33 @@ class ImThumb
 		$this->uriMatches = array();
 
 		foreach ($whitelist as $regex => $handlerClass) {
-			// check to see if it's an HTTP regex match or something nonstandard
+			// check to see if it's an HTTP regex match configured simply, or something custom
 			if (!class_exists($handlerClass) && strpos($handlerClass, '^http') !== false) {
-				$this->uriMatches[$handlerClass] = 'ImThumbAssetLoader_HTTP';
-			} else {
-				$this->uriMatches[$regex] = $handlerClass;
+				$regex = $handlerClass;
+				$handlerClass = 'ImThumbSource_HTTP';
 			}
+
+			$this->uriMatches[$regex] = $handlerClass;
 		}
+	}
+
+	public static function loadSourceHandler($class)
+	{
+		if (class_exists($class)) {
+			return true;
+		}
+
+		$tryFile = '/imthumb-source-' . strtolower(str_replace('ImThumbSource_', '', $class)) . '.class.php';
+
+		if (file_exists(dirname(__FILE__) . $tryFile)) {
+			require_once(dirname(__FILE__) . $tryFile);
+			return true;
+		}
+		if ($this->params['extraSourceHandlerPath'] && file_exists($this->params['extraSourceHandlerPath'] . $tryFile)) {
+			require_once($this->params['extraSourceHandlerPath'] . $tryFile);
+			return true;
+		}
+		return false;
 	}
 
 	//--------------------------------------------------------------------------
