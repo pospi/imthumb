@@ -9,11 +9,22 @@
 
 class ImThumbHTTP
 {
-	protected $image;
+	private static $defaults = array(
+		'allowAllExternal' => false,
+		'uriWhitelist' => array(),
+		'externalRequestTimeout' => 20,
+		'externalRequestRetry' => 3600,
+	);
 
-	public function __construct(ImThumb $image)
+	protected static $uriMatches = array();
+
+	protected $image;
+	protected $params;
+
+	public function __construct(ImThumb $image, Array $params = null)
 	{
 		$this->image = $image;
+		$this->params = array_merge(self::$defaults, isset($params) ? $params : array());
 	}
 
 	// Image output

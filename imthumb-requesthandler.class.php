@@ -18,6 +18,17 @@ abstract class ImThumbRequestHandler
 	{
 		global $ALLOWED_SITES;
 
+		if (self::readConst('ALLOW_EXTERNAL', false)) {
+			$uriWhitelist = array();
+			foreach ($ALLOWED_SITES as $site) {
+				// :IMPORTANT: all regexes must have scheme anchored to the string start to be processed correctly- @see ImThumbHTTP::generateURIRegexes()
+				$uriWhitelist[] = "@^https?://(\w|\.)*?\.?{$site}@";
+			}
+
+			require_once(dirname(__FILE__) . '/imthumb-loader.class.php');
+			require_once(dirname(__FILE__) . '/imthumb-loader-http.class.php');
+		}
+
 		// build params for the class
 		return array(
 			'src' => self::readParam('src'),
@@ -62,6 +73,11 @@ abstract class ImThumbRequestHandler
 			'cacheSalt' => self::readConst('FILE_CACHE_NAME_SALT', 'IOLUJN!(Y&)(TEHlsio(&*Y3978fgsdBBu'),
 			'browserCache' => !self::readConst('BROWSER_CACHE_DISABLE', false),
 			'browserCacheMaxAge' => self::readConst('BROWSER_CACHE_MAX_AGE', 86400),
+
+			'uriWhitelist' => self::readConst('ALLOW_EXTERNAL', false) ? $uriWhitelist : false,		// enable external image loading / cropping
+			'allowAllExternal' => self::readConst('ALLOW_ALL_EXTERNAL_SITES', false),
+			'externalRequestTimeout' => self::readConst('CURL_TIMEOUT', 20),				// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
+			'externalRequestRetry' => self::readConst('WAIT_BETWEEN_FETCH_ERRORS', 3600),	// Time to wait between errors fetching remote file
 
 			'silent' => self::readConst('SKIP_IMTHUMB_HEADERS', false),	// by default we send generator and timing stats in response headers
 			'debug' => self::readConst('SHOW_DEBUG_STATS', false),		// show timing and resource usage statistics in HTTP headers
