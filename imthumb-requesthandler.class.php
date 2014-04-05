@@ -22,6 +22,7 @@ abstract class ImThumbRequestHandler
 			$uriWhitelist = array();
 			foreach ($ALLOWED_SITES as $site) {
 				// :IMPORTANT: all regexes must have scheme anchored to the string start to be processed correctly- @see ImThumbHTTP::generateURIRegexes()
+				// :TODO: dots are whildcards
 				$uriWhitelist[] = "@^https?://(\w|\.)*?\.?{$site}@";
 			}
 
@@ -79,8 +80,12 @@ abstract class ImThumbRequestHandler
 			'externalRequestTimeout' => self::readConst('CURL_TIMEOUT', 20),				// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
 			'externalRequestRetry' => self::readConst('WAIT_BETWEEN_FETCH_ERRORS', 3600),	// Time to wait between errors fetching remote file
 
+			'webshot' => self::readParam('webshot', 0),		// if true, requesting a remote webpage and want to render it to an image
+
 			'silent' => self::readConst('SKIP_IMTHUMB_HEADERS', false),	// by default we send generator and timing stats in response headers
 			'debug' => self::readConst('SHOW_DEBUG_STATS', false),		// show timing and resource usage statistics in HTTP headers
+
+			'extraSourceHandlerPath' => self::readConst('EXTRA_SOURCE_HANDLERS_PATH', null),	// directory to autoload any custom source handlers from. if you don't know what this means then you don't need this.
 		);
 	}
 
