@@ -42,7 +42,10 @@ class ImThumb
 
 	private $isValidSrc = true;
 
-	public $cache;	// ImThumbCache instance
+	public $cache;			// ImThumbCache instance
+
+	public $sourceHandler;	// ImThumbLoader instance
+	private $uriMatches = array();	// generated array of matching regexes -> ImThumbLoaders
 
 	private $startTime;	// stats
 	private $startCPU;
@@ -302,9 +305,9 @@ class ImThumb
 
 	protected function getRealImagePath($src)
 	{
-		if (preg_match('@^https?://@i', $src)) {
-			// :TODO:
-			throw new ImThumbException('External images not implemented yet');
+		if ($handlerClass = $this->checkExternalSource($src)) {
+			$this->sourceHandler = new $handlerClass();
+			return $src;
 		}
 		if ($this->param('baseDir')) {
 			if (preg_match('@^' . preg_quote($this->param('baseDir'), '@') . '@', $src)) {
@@ -713,6 +716,52 @@ class ImThumb
 		}
 
 		return $modifiedSince >= $this->mtime;
+	}
+
+	//--------------------------------------------------------------------------
+	// External assets
+
+	public function checkExternalSource($src)
+	{
+		$isHTTP = preg_match('@^https?://@i', $src);
+
+		// if allow all is set, any HTTP(s) URL can be vetoed immediately
+		if ($this->params['allowAllExternal'] && $isHTTP) {
+			return 'ImThumbAssetLoader_HTTP';
+		}
+
+		// map regexes to handler classes on first run
+		if (!$this->uriMatches && $this->params['uriWhitelist']) {
+			$this->generateURIRegexes($this->params['uriWhitelist']);
+		}
+
+		// no whitelist or global permission, can't do it
+		if ($isHTTP && !$this->uriMatches) {
+			return false;
+		}
+
+		// process all URI matches & return an appropriate handler if one is found
+		foreach ($this->uriMatches as $uri => $handlerClass) {
+			if (preg_match($uri, $src)) {
+				return $handlerClass;
+			}
+		}
+
+		return false;
+	}
+
+	private function generateURIRegexes($whitelist)
+	{
+		$this->uriMatches = array();
+
+		foreach ($whitelist as $regex => $handlerClass) {
+			// check to see if it's an HTTP regex match or something nonstandard
+			if (!class_exists($handlerClass) && strpos($handlerClass, '^http') !== false) {
+				$this->uriMatches[$handlerClass] = 'ImThumbAssetLoader_HTTP';
+			} else {
+				$this->uriMatches[$regex] = $handlerClass;
+			}
+		}
 	}
 
 	//--------------------------------------------------------------------------

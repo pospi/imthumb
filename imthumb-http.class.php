@@ -16,8 +16,6 @@ class ImThumbHTTP
 		'externalRequestRetry' => 3600,
 	);
 
-	protected static $uriMatches = array();
-
 	protected $image;
 	protected $params;
 
@@ -107,9 +105,6 @@ class ImThumbHTTP
 
 		return $str ? true : false;
 	}
-
-	// :TODO: External assets
-	//--------------------------------------------------------------------------
 
 	// :TODO: Webpage rendering
 	//--------------------------------------------------------------------------
