@@ -7,7 +7,7 @@
  * @since	2014-04-03
  */
 
-interface ImThumbLoader
+interface ImThumbSource
 {
 	public function retrieve($uri);
 }

@@ -44,8 +44,8 @@ class ImThumb
 
 	public $cache;			// ImThumbCache instance
 
-	public $sourceHandler;	// ImThumbLoader instance
-	private $uriMatches = array();	// generated array of matching regexes -> ImThumbLoaders
+	public $sourceHandler;	// ImThumbSource instance
+	private $uriMatches = array();	// generated array of matching regexes -> ImThumbSources
 
 	private $startTime;	// stats
 	private $startCPU;
