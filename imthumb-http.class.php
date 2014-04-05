@@ -1,6 +1,6 @@
 <?php
 /**
- * HTTP request handler
+ * HTTP response handler
  *
  * @package ImThumb
  * @author  Sam Pospischil <pospi@spadgos.com>
