@@ -32,7 +32,7 @@ class ImThumbHTTP
 	{
 		// check we can send these first
 		if (headers_sent()) {
-			$this->critical("Could not set image headers, output already started", self::ERR_OUTPUTTING);
+			$this->critical("Could not set image headers, output already started", ImThumb::ERR_OUTPUTTING);
 		}
 
 		$modifiedDate = gmdate('D, d M Y H:i:s') . ' GMT';
