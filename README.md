@@ -11,8 +11,8 @@ I originally wrote this because I was attempting to optimise the quality of TimT
 
 > #### Version history
 >
-> `1.0` - baseline functionality. Handles a complete set of TimThumb parameters and operations when running on local files, with some neat additions. In production use.
-> `2.x` (current) - massive refactoring, more modular class structure. The new image reading API allows drawing in remote images via HTTP or indeed any concievable data source. **Alpha** and in progress.
+> - `1.0` - baseline functionality. Handles a complete set of TimThumb parameters and operations when running on local files, with some neat additions. In production use.
+> - `2.x` (current) - massive refactoring, more modular class structure. The new image reading API allows drawing in remote images via HTTP or indeed any concievable data source. **Alpha** and in progress.
 
 #### Additional Functionality
 
