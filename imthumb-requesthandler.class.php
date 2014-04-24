@@ -200,6 +200,30 @@ abstract class ImThumbRequestHandler
 
 	//--------------------------------------------------------------------------
 
+	// attempts to find and load TimThumb config files and set defaults. Looks in CWD and parent dir.
+	// @see http://www.binarymoon.co.uk/2012/03/timthumb-configs/
+	public static function readTimThumbConfig($basePath = null)
+	{
+		if ($basePath === null) {
+			$basePath = dirname(__FILE__);
+		}
+
+		if (file_exists($basePath . '/timthumb-config.php'))	{
+			require_once($basePath . '/timthumb-config.php');
+			return true;
+		}
+
+		$basePath = dirname($basePath);
+		if (file_exists($basePath . '/timthumb-config.php'))	{
+			require_once($basePath . '/timthumb-config.php');
+			return true;
+		}
+
+		return false;
+	}
+
+	//--------------------------------------------------------------------------
+
 	// mostly taken from TimThumb
 	public static function getDocRoot()
 	{
