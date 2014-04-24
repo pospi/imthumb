@@ -31,24 +31,20 @@ class ImThumb
 	//--------------------------------------------------------------------------
 	// Initialisation & configuration
 
+	public static $defaultImageSource = 'ImThumbSource_Local';
+
 	private $params;
+	public $meta;	// ImThumbMeta instance
 
 	private $imageHandle = null;
-	private $imageType;
-	private $mimeType;
-	private $imageExt;
-	private $src;
-	private $mtime;
-
-	private $isValidSrc = true;
 
 	public $cache;			// ImThumbCache instance
 
 	public $sourceHandler;	// ImThumbSource instance
-	private $uriMatches = array();	// generated array of matching regexes -> ImThumbSources
 
 	private $startTime;	// stats
 	private $startCPU;
+
 
 	public function __construct(Array $params = null)
 	{
@@ -103,17 +99,23 @@ class ImThumb
 
 	public function isValid()
 	{
-		return $this->isValidSrc;
+		if (!isset($this->meta)) {
+			return false;
+		}
+		return $this->meta->valid;
 	}
 
 	public function getMime()
 	{
-		return $this->mimeType;
+		if (!isset($this->meta)) {
+			return null;
+		}
+		return $this->meta->mimeType;
 	}
 
 	public function getSrc()
 	{
-		return $this->src;
+		return $this->meta->src;
 	}
 
 	public function getImagick()
@@ -178,84 +180,46 @@ class ImThumb
 			$src = $this->param('src');
 		}
 
-		if ($src) {
-			$this->cache = null;
+		// find appropriate handler for this image
+		if (!$this->determineImageSource($src)) {
+			// fallback to default source handling (local filesystem unless overridden)
+			$this->setDefaultSourceHandler();
+		}
 
-			if ($this->initCache()) {
-				$this->loadImageMeta($src);
-				$this->cache->load($this);
+		// read image metadata
+		$this->meta = $this->sourceHandler->readMetadata($src, $this);
 
-				// expire caches when source images are updated
-				if ($this->mtime > $this->cache->mtime) {
-					$this->loadImageFile($src);
-					$this->doResize();
-					$this->cache->isCached(false);
-				}
+		// validate it to ensure processable
+		$this->meta->validateWith($this);
+
+		// check the cache and flag for generation where necessary
+		$this->cache = null;
+		if ($this->initCache()) {
+			// cache ftw. load it up
+			// :TODO: cache should pass back same stuff as a source
+			$this->cache->load($this);
+
+			// check cache time against file time.
+			// :TODO: allow source handlers to specify (& track) minimal cache times in order to avoid latency on remote asset metadata checks
+			if ($this->meta->mtime > $this->cache->mtime) {
+				// if cache has been invalidated, flag it as empty so we regenerate on our next call to writeCache()
+				$this->cache->isCached(false);
 			} else {
-				$this->loadImageFile($src);
-				$this->doResize();
+				// otherwise we have no need to do anything else, cached image is already loaded
+				return;
 			}
-		} else {
-			$this->critical("No image path specified for thumbnail generation", self::ERR_SRC_IMAGE);
 		}
-	}
 
-	public function loadImageFile($src)
-	{
-		$src = $this->getRealImagePath($src);
+		// load the source image into memory
+		$this->imageHandle = $this->sourceHandler->readResource($this->meta, $this);
 
-		$this->loadImageMeta($src);
-
-		if (!$this->isValidSrc) {
-			// load up the fallback image if we couldn't find the source
+		// load up the fallback image if we couldn't find the source
+		if (!$this->imageHandle) {
 			$this->loadFallbackImage();
-		} else {
-			$this->imageHandle = new Imagick();
-			$this->imageHandle->readImage($src);
 		}
 
-		if ($this->mimeType == 'image/jpeg') {
-			$this->imageHandle->setImageFormat('jpg');
-		} else if ($this->mimeType == 'image/gif') {
-			$this->imageHandle->setImageFormat('gif');
-		} else if ($this->mimeType == 'image/png') {
-			$this->imageHandle->setImageFormat('png');
-		}
-	}
-
-	protected function loadImageMeta($src)
-	{
-		$src = $this->getRealImagePath($src);
-
-		$this->mtime = @filemtime($src);
-		if (false === $this->mtime) {
-			$this->isValidSrc = false;
-			return;
-		}
-
-		$size = @filesize($src);
-		if ($size > $this->param('maxSize')) {
-			$this->critical("Image file exceeds maximum processable size", self::ERR_SRC_IMAGE);
-		}
-
-		$sData = @getimagesize($src);
-		if (!$sData) {
-			$this->isValidSrc = false;
-			return;
-		}
-
-		$this->src = $src;
-		$this->imageType = $sData[2];
-
-		$this->mimeType = strtolower($sData['mime']);
-		if(!preg_match('/^image\//i', $this->mimeType)) {
-			$this->mimeType = 'image/' . $this->mimeType;
-		}
-		if ($this->mimeType == 'image/jpg') {
-			$this->mimeType = 'image/jpeg';
-		}
-
-		$this->imageExt = substr($src, strrpos($src, '.') + 1);
+		// process the action
+		$this->doResize();
 	}
 
 	public function loadFallbackImage()
@@ -279,8 +243,10 @@ class ImThumb
 				// throw exception if the configured fallback is incorrect
 				throw new ImThumbException("Cannot display error image", self::ERR_CONFIGURATION);
 			}
-			$this->loadImageMeta($imagePath);
-			$this->isValidSrc = false;
+
+			$this->setDefaultSourceHandler();
+			$this->sourceHandler->readMetadata($imagePath, $this);
+			$this->meta->valid = false;
 			return true;
 		}
 
@@ -299,25 +265,26 @@ class ImThumb
 		$this->imageHandle->newImage($fallbackW, $fallbackH, new ImagickPixel($fallbackColor));
 		$this->imageHandle->setImageFormat('jpg');
 
-		$this->mimeType = 'image/jpeg';
+		$this->meta->mimeType = 'image/jpeg';
 		return false;
 	}
 
-	protected function getRealImagePath($src)
+	protected function determineImageSource($src)
 	{
 		if ($handlerClass = $this->checkExternalSource($src)) {
 			$this->sourceHandler = new $handlerClass();
-			return $src;
+			return true;
 		}
-		if ($this->param('baseDir')) {
-			if (preg_match('@^' . preg_quote($this->param('baseDir'), '@') . '@', $src)) {
-				return $src;
-			}
-			return realpath($this->param('baseDir') . '/' . $src);
-		}
+		return false;
+	}
 
-		require_once(dirname(__FILE__) . '/imthumb-requesthandler.class.php');
-		return realpath(ImThumbRequestHandler::getDocRoot() . $src);
+	protected function setDefaultSourceHandler()
+	{
+		if (!self::loadSourceHandler(self::$defaultImageSource)) {
+			throw new ImThumbCriticalException('Could not load default source handler! Is ImThumb installed correctly?', self::ERR_SERVER_CONFIG);
+		}
+		$hClass = self::$defaultImageSource;	// oldPHP
+		$this->sourceHandler = new $hClass();
 	}
 
 	//--------------------------------------------------------------------------
@@ -325,7 +292,7 @@ class ImThumb
 
 	public function doResize()
 	{
-		if (!$this->isValidSrc) {
+		if (!$this->isValid()) {
 			// force showing the entire image, unaltered, if we are displaying a fallback
 			$this->configureUnalteredFitImage();
 		}
@@ -340,9 +307,9 @@ class ImThumb
 		}
 
 		// each filetype needs to have some extra handling done
-		$isGIF = strpos($this->mimeType, 'gif') !== false;
-		$isJPEG = strpos($this->mimeType, 'jpeg') !== false;
-		$isPNG = strpos($this->mimeType, 'png') !== false;
+		$isGIF = strpos($this->meta->mimeType, 'gif') !== false;
+		$isJPEG = strpos($this->meta->mimeType, 'jpeg') !== false;
+		$isPNG = strpos($this->meta->mimeType, 'png') !== false;
 
 		// are we dealing with transparency?
 		$canvas_trans = (bool)$this->param('canvasTransparent') && ($isPNG || $isGIF);
@@ -382,7 +349,7 @@ class ImThumb
 
 		// set background colour if PNG transparency is disabled
 		if ($isPNG && $canvas_trans && !$this->param('pngTransparency')) {
-			$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_color, $this->mimeType);
+			$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_color, $this->meta->mimeType);
 			$canvas->compositeImage($this->imageHandle, Imagick::COMPOSITE_OVER, 0, 0);
 			$this->imageHandle = $canvas;
 		}
@@ -420,7 +387,7 @@ class ImThumb
 			case 2:		// inner-fill
 				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
 
-				$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_trans ? null : $canvas_color, $this->mimeType);
+				$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_trans ? null : $canvas_color, $this->meta->mimeType);
 
 				$xOffset = ($new_width - $this->imageHandle->getImageWidth()) / 2;
 				$yOffset = ($new_height - $this->imageHandle->getImageHeight()) / 2;
@@ -460,7 +427,7 @@ class ImThumb
 			$cropW = abs($endX - $startX);
 			$cropH = abs($endY - $startY);
 
-			$canvas = $this->generateNewCanvas($cropW, $cropH, $canvas_trans ? null : $canvas_color, $this->mimeType);
+			$canvas = $this->generateNewCanvas($cropW, $cropH, $canvas_trans ? null : $canvas_color, $this->meta->mimeType);
 
 			$xOffset = $startX < 0 ? abs($startX) : 0;
 			$yOffset = $startY < 0 ? abs($startY) : 0;
@@ -512,13 +479,13 @@ class ImThumb
 
 	protected function compress()
 	{
-		if (strpos($this->mimeType, 'jpeg') !== false) {
+		if (strpos($this->meta->mimeType, 'jpeg') !== false) {
 			if ($this->param('quality') == 100) {
 				$this->imageHandle->setImageCompression(Imagick::COMPRESSION_LOSSLESSJPEG);
 			} else {
 				$this->imageHandle->setImageCompression(Imagick::COMPRESSION_JPEG);
 			}
-		} else if (strpos($this->mimeType, 'png') !== false) {
+		} else if (strpos($this->meta->mimeType, 'png') !== false) {
 			$this->imageHandle->setImageCompression(Imagick::COMPRESSION_ZIP);
 		}
 
@@ -707,7 +674,7 @@ class ImThumb
 			$modifiedSince = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? $_SERVER['HTTP_IF_MODIFIED_SINCE'] : false;
 		}
 
-		if ($this->mtime <= 0 || !$this->param('doBrowserCache') || empty($modifiedSince)) {
+		if (!$this->meta || $this->meta->mtime <= 0 || !$this->param('doBrowserCache') || empty($modifiedSince)) {
 			return false;
 		}
 
@@ -715,7 +682,7 @@ class ImThumb
 			$modifiedSince = strtotime($modifiedSince);
 		}
 
-		return $modifiedSince >= $this->mtime;
+		return $modifiedSince >= $this->meta->mtime;
 	}
 
 	//--------------------------------------------------------------------------
@@ -723,52 +690,22 @@ class ImThumb
 
 	public function checkExternalSource($src)
 	{
-		$isHTTP = preg_match('@^https?://@i', $src);
-
-		// if allow all is set, any HTTP(s) URL can be vetoed immediately
-		if ($this->params['allowAllExternal'] && $isHTTP) {
-			self::loadSourceHandler('ImThumbSource_HTTP');
-			return 'ImThumbSource_HTTP';
-		}
-
-		// map regexes to handler classes on first run
-		if (!$this->uriMatches && $this->params['uriWhitelist']) {
-			$this->generateURIRegexes($this->params['uriWhitelist']);
-		}
-
 		// no whitelist or global permission, can't do it
-		if ($isHTTP && !$this->uriMatches) {
+		if (!$whitelist = $this->params['sourceHandlers']) {
 			return false;
 		}
 
 		// process all URI matches & return an appropriate handler if one is found
-		if ($this->uriMatches) {
-			foreach ($this->uriMatches as $uri => $handlerClass) {
-				if (preg_match($uri, $src)) {
-					if (!self::loadSourceHandler($handlerClass)) {
-						$this->critical('Could not load source handler \'' . $handlerClass . '\'', self::ERR_SERVER_CONFIG);
-					}
-					return $handlerClass;
+		foreach ($whitelist as $uri => $handlerClass) {
+			if (preg_match($uri, $src)) {
+				if (!self::loadSourceHandler($handlerClass)) {
+					throw new ImThumbCriticalException('Could not load source handler \'' . $handlerClass . '\'', self::ERR_SERVER_CONFIG);
 				}
+				return $handlerClass;
 			}
 		}
 
 		return false;
-	}
-
-	private function generateURIRegexes($whitelist)
-	{
-		$this->uriMatches = array();
-
-		foreach ($whitelist as $regex => $handlerClass) {
-			// check to see if it's an HTTP regex match configured simply, or something custom
-			if (!class_exists($handlerClass) && strpos($handlerClass, '^http') !== false) {
-				$regex = $handlerClass;
-				$handlerClass = 'ImThumbSource_HTTP';
-			}
-
-			$this->uriMatches[$regex] = $handlerClass;
-		}
 	}
 
 	public static function loadSourceHandler($class)

@@ -9,5 +9,7 @@
 
 interface ImThumbSource
 {
-	public function retrieve($uri);
+	public function readMetadata($src, ImThumb $requestor);
+
+	public function readResource(ImThumbMeta $meta, ImThumb $requestor);
 }
