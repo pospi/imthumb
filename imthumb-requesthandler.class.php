@@ -16,18 +16,23 @@ abstract class ImThumbRequestHandler
 	 */
 	public static function readParams()
 	{
-		global $ALLOWED_SITES;
+		global $ALLOWED_SITES, $IMAGE_SOURCE_HANDLERS;
 
-		if (self::readConst('ALLOW_EXTERNAL', false)) {
+		$allowExternalHTTP = self::readConst('ALLOW_EXTERNAL', false);
+		$allowAllHTTP = self::readConst('ALLOW_ALL_EXTERNAL_SITES', false);
+
+		// image source handlers: process global TimThumb variables and convert to our regex-based format for URL matching
+		if ($IMAGE_SOURCE_HANDLERS) {
+			$uriWhitelist = $IMAGE_SOURCE_HANDLERS;
+		} else {
 			$uriWhitelist = array();
+		}
+		if ($allowAllHTTP) {
+			$uriWhitelist['@^https?://@'] = 'ImThumbSource_HTTP';
+		} else if ($allowExternalHTTP) {
 			foreach ($ALLOWED_SITES as $site) {
-				// :IMPORTANT: all regexes must have scheme anchored to the string start to be processed correctly- @see ImThumbHTTP::generateURIRegexes()
-				// :TODO: dots are whildcards
-				$uriWhitelist[] = "@^https?://(\w|\.)*?\.?{$site}@";
+				$uriWhitelist['@^https?://(\w|\.)*?\.?' . str_replace('.', '\\.', $site) . '@'] = 'ImThumbSource_HTTP';
 			}
-
-			require_once(dirname(__FILE__) . '/imthumb-loader.class.php');
-			require_once(dirname(__FILE__) . '/imthumb-loader-http.class.php');
 		}
 
 		// build params for the class
@@ -75,8 +80,8 @@ abstract class ImThumbRequestHandler
 			'browserCache' => !self::readConst('BROWSER_CACHE_DISABLE', false),
 			'browserCacheMaxAge' => self::readConst('BROWSER_CACHE_MAX_AGE', 86400),
 
-			'uriWhitelist' => self::readConst('ALLOW_EXTERNAL', false) ? $uriWhitelist : false,		// enable external image loading / cropping
-			'allowAllExternal' => self::readConst('ALLOW_ALL_EXTERNAL_SITES', false),
+			'sourceHandlers' => $uriWhitelist,		// remote image source handler URI mappings. Use a global for easy preconfiguration in options like TimThumb.
+			'extraSourceHandlerPath' => self::readConst('EXTRA_SOURCE_HANDLERS_PATH', null),	// directory to autoload any custom source handlers from. if you don't know what this means then you don't need this.
 			'externalRequestTimeout' => self::readConst('CURL_TIMEOUT', 20),				// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
 			'externalRequestRetry' => self::readConst('WAIT_BETWEEN_FETCH_ERRORS', 3600),	// Time to wait between errors fetching remote file
 
@@ -84,8 +89,6 @@ abstract class ImThumbRequestHandler
 
 			'silent' => self::readConst('SKIP_IMTHUMB_HEADERS', false),	// by default we send generator and timing stats in response headers
 			'debug' => self::readConst('SHOW_DEBUG_STATS', false),		// show timing and resource usage statistics in HTTP headers
-
-			'extraSourceHandlerPath' => self::readConst('EXTRA_SOURCE_HANDLERS_PATH', null),	// directory to autoload any custom source handlers from. if you don't know what this means then you don't need this.
 		);
 	}
 
