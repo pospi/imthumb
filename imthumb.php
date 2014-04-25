@@ -20,6 +20,7 @@
 require_once('imthumb-requesthandler.class.php');
 require_once('imthumb-meta.class.php');
 require_once('imthumb-source.class.php');
+require_once('imthumb-source-local.class.php');
 require_once('imthumb-http.class.php');
 require_once('imthumb.class.php');
 
