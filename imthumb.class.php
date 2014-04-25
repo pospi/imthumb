@@ -49,7 +49,7 @@ class ImThumb
 	public function __construct(Array $params = null)
 	{
 		if (!class_exists('Imagick')) {
-			$this->critical("Could not load ImThumb: ImageMagick is not installed. Please contact your webhost and ask them to install the ImageMagick library", self::ERR_SERVER_CONFIG);
+			throw new ImThumbException("Could not load ImThumb: ImageMagick is not installed. Please contact your webhost and ask them to install the ImageMagick library", self::ERR_SERVER_CONFIG);
 		}
 
 		$this->startTime = microtime(true);
@@ -468,9 +468,9 @@ class ImThumb
 					call_user_func_array(array($filterHandler, $filterName), $filterArgs);
 				}
 			} catch (ImThumbException $e) {
-				$this->critical("Problem running filter '{$filterName}': " . $e->getMessage());
+				throw new ImThumbException("Problem running filter '{$filterName}': " . $e->getMessage());
 			} catch (ImagickException $e) {
-				$this->critical("Error in filter '{$filterName}': " . $e->getMessage());
+				throw new ImThumbException("Error in filter '{$filterName}': " . $e->getMessage());
 			}
 		}
 	}
@@ -739,14 +739,6 @@ class ImThumb
 				throw new ImThumbCriticalException($this->param('rateExceededMessage'), ImThumb::ERR_RATE_EXCEEDED);
 			}
 		}
-	}
-
-	//--------------------------------------------------------------------------
-	// Error handling
-
-	protected function critical($string, $code = 0)
-	{
-		throw new ImThumbException($string, $code);
 	}
 }
 

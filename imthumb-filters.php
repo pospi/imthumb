@@ -149,7 +149,7 @@ class ImThumbFilters
 	public function __call($method, $args)
 	{
 		if (!isset(self::$IMAGE_FILTER_PARAMS[$method])) {
-			$this->critical("{$method} is not a valid filter name");
+			throw new ImThumbException("{$method} is not a valid filter name");
 		}
 
 		// auto-read quantumn range for methods needing it
@@ -168,7 +168,7 @@ class ImThumbFilters
 	public function timthumbFilter($id, $args)
 	{
 		if (!isset(self::$IMAGE_FILTER_IDS[$id])) {
-			$this->critical("{$method} is not a valid filter ID");
+			throw new ImThumbException("{$method} is not a valid filter ID");
 		}
 
 		// adjust some parameters to timthumb argument expectations
@@ -228,12 +228,5 @@ class ImThumbFilters
 	public static function getAllowableMethods()
 	{
 		return self::$IMAGE_FILTER_PARAMS;
-	}
-
-	//--------------------------------------------------------------------------
-
-	private function critical($string)
-	{
-		throw new ImThumbException("Filters: {$string}", ImThumb::ERR_FILTER);
 	}
 }

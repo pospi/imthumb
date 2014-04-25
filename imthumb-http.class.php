@@ -32,7 +32,7 @@ class ImThumbHTTP
 	{
 		// check we can send these first
 		if (headers_sent()) {
-			$this->critical("Could not set image headers, output already started", ImThumb::ERR_OUTPUTTING);
+			throw new ImThumbException("Could not set image headers, output already started", ImThumb::ERR_OUTPUTTING);
 		}
 
 		$modifiedDate = gmdate('D, d M Y H:i:s') . ' GMT';
@@ -104,16 +104,5 @@ class ImThumbHTTP
 		}
 
 		return $str ? true : false;
-	}
-
-	// :TODO: Webpage rendering
-	//--------------------------------------------------------------------------
-
-	//--------------------------------------------------------------------------
-	// Error handling
-
-	protected function critical($string, $code = 0)
-	{
-		throw new ImThumbException($string, $code);
 	}
 }

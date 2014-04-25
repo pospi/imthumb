@@ -73,7 +73,7 @@ class ImThumbCache
 		}
 
 		if (!touch($cacheDir . '/index.html')) {
-			$this->critical("Could not create the index.html file - to fix this create an empty file named index.html file in the cache directory.", ImThumb::ERR_CACHE);
+			throw new ImThumbException("Could not create the index.html file - to fix this create an empty file named index.html file in the cache directory.", ImThumb::ERR_CACHE);
 		}
 	}
 
@@ -88,7 +88,7 @@ class ImThumbCache
 		$tempfile = tempnam($this->baseDir, 'imthumb_tmpimg_');
 
 		if (!$imageHandle->getImagick()->writeImage($tempfile)) {
-			$this->critical("Could not write image to temporary file", ImThumb::ERR_CACHE);
+			throw new ImThumbException("Could not write image to temporary file", ImThumb::ERR_CACHE);
 		}
 
 		$cacheFile = $this->getCachePath($imageHandle);
@@ -96,7 +96,7 @@ class ImThumbCache
 
 		$fh = fopen($lockFile, 'w');
 		if (!$fh) {
-			$this->critical("Could not open the lockfile for writing an image", ImThumb::ERR_CACHE);
+			throw new ImThumbException("Could not open the lockfile for writing an image", ImThumb::ERR_CACHE);
 		}
 
 		if (flock($fh, LOCK_EX)) {
@@ -109,7 +109,7 @@ class ImThumbCache
 			fclose($fh);
 			@unlink($lockFile);
 			@unlink($tempfile);
-			$this->critical("Could not get a lock for writing", ImThumb::ERR_CACHE);
+			throw new ImThumbException("Could not get a lock for writing", ImThumb::ERR_CACHE);
 		}
 
 		return true;
@@ -128,7 +128,7 @@ class ImThumbCache
 		// If this is a new installation we need to create the file
 		if (!is_file($lastCleanFile)) {
 			if (!touch($lastCleanFile)) {
-				$this->critical("Could not create cache clean timestamp file.", ImThumb::ERR_CACHE);
+				throw new ImThumbException("Could not create cache clean timestamp file.", ImThumb::ERR_CACHE);
 			}
 		}
 
@@ -218,13 +218,5 @@ class ImThumbCache
 		}
 
 		return $cacheDir . '/' . $this->cachePrefix . md5($this->cacheSalt . implode('', $imageHandle->params()) . ImThumb::VERSION) . $this->cacheSuffix;
-	}
-
-	//--------------------------------------------------------------------------
-	// Error handling
-
-	protected function critical($string, $code = 0)
-	{
-		throw new ImThumbException($string, $code);
 	}
 }
