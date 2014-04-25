@@ -250,7 +250,7 @@ class ImThumb
 			}
 
 			$this->setDefaultSourceHandler();
-			$this->sourceHandler->readMetadata($imagePath, $this);
+			$this->meta = $this->sourceHandler->readMetadata($imagePath, $this);
 			$this->meta->valid = false;
 			return true;
 		}
@@ -310,6 +310,10 @@ class ImThumb
 			// generated fallback images and so we need to jump out
 			return false;
 		}
+
+		// set the image output format based on input
+		// :TODO: this needs to be separate when converting non-image mimetypes
+		$this->meta->assignMimeType($this->imageHandle);
 
 		// each filetype needs to have some extra handling done
 		$isGIF = strpos($this->meta->mimeType, 'gif') !== false;

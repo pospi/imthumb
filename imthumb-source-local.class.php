@@ -49,9 +49,6 @@ class ImThumbSource_Local implements ImThumbSource
 		$target = new Imagick();
 		$target->readImage($meta->src);
 
-		// :TODO: does order of this matter or is this setting only for output?
-		$meta->assignMimeType($target);
-
 		return $target;
 	}
 
