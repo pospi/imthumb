@@ -11,33 +11,36 @@ class ImThumbSource_Local implements ImThumbSource
 {
 	public function readMetadata($src, ImThumb $requestor)
 	{
-		$meta = new ImThumbMeta();
+		$fallbackMeta = new ImThumbMeta();
 
 		$src = $this->getRealImagePath($src, $requestor->param('baseDir'));
 
-		$meta->mtime = @filemtime($src);
-		if (false === $meta->mtime) {
-			return $meta->invalid();
+		$mtime = @filemtime($src);
+		if (false === $mtime) {
+			return $fallbackMeta->invalid();
 		}
 
-		$meta->fileSize = @filesize($src);
+		$fileSize = @filesize($src);
 
 		$sData = @getimagesize($src);	// ensure it's an image
 		if (!$sData) {
-			return $meta->invalid();
+			return $fallbackMeta->invalid();
 		}
 
-		$meta->mimeType = strtolower($sData['mime']);
-		if(!preg_match('/^image\//i', $meta->mimeType)) {
-			$meta->mimeType = 'image/' . $meta->mimeType;
+		$mimeType = strtolower($sData['mime']);
+		if(!preg_match('/^image\//i', $mimeType)) {
+			$mimeType = 'image/' . $mimeType;
 		}
-		if ($meta->mimeType == 'image/jpg') {
-			$meta->mimeType = 'image/jpeg';
+		if ($mimeType == 'image/jpg') {
+			$mimeType = 'image/jpeg';
 		}
 
-		$meta->src = $src;
-
-		return $meta;
+		return new ImThumbMeta(
+			$src,
+			$mtime,
+			$fileSize,
+			$mimeType
+		);
 	}
 
 	public function readResource(ImThumbMeta $meta, ImThumb $requestor)

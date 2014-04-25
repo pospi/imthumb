@@ -8,9 +8,17 @@ class ImThumbMeta
 	public $src;		// must be a fully resolvable URI
 	public $valid = true;
 
-	public $mtime = 0;
-	public $fileSize = 0;
+	public $mtime;
+	public $fileSize;
 	public $mimeType = '';
+
+	public function __construct($src = null, $mtime = null, $fileSize = null, $mimeType = '')
+	{
+		$this->src = $src;
+		$this->mtime = $mtime;
+		$this->fileSize = $fileSize;
+		$this->mimeType = $mimeType;
+	}
 
 	public function validateWith(ImThumb $generator)
 	{
