@@ -206,6 +206,7 @@ class ImThumbCache
 				'%s%',
 				'%cc%',
 				'%ct%',
+				'%cr%',
 				'%filters%',
 				'%pjpg%',
 			), array(
@@ -219,6 +220,7 @@ class ImThumbCache
 				$imageHandle->param('sharpen') ? 's' : '',
 				$imageHandle->param('canvasColor'),
 				$imageHandle->param('canvasTransparent') ? 't' : '',
+				$imageHandle->param('cropRect'),
 				$imageHandle->param('filters'),
 				$imageHandle->param('jpgProgressive') ? 'p' : '',
 			), $this->cacheFilenameFormat);
