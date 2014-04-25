@@ -9,6 +9,7 @@
 
 class ImThumbException extends Exception {}
 class ImThumbCriticalException extends ImThumbException {}
+class ImThumbNotFoundException extends ImThumbException {}
 
 class ImThumb
 {
@@ -190,7 +191,13 @@ class ImThumb
 		$this->meta = $this->sourceHandler->readMetadata($src, $this);
 
 		// validate it to ensure processable
-		$this->meta->validateWith($this);
+		try {
+			$this->meta->validateWith($this);
+		} catch (ImThumbNotFoundException $e) {
+			$this->loadFallbackImage();
+			$this->doResize();
+			return;
+		}
 
 		// check the cache and flag for generation where necessary
 		$this->cache = null;

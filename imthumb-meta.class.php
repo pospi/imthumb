@@ -15,7 +15,7 @@ class ImThumbMeta
 	public function validateWith(ImThumb $generator)
 	{
 		if (!$this->valid) {
-			throw new ImThumbException("Could not read image metadata", ImThumb::ERR_SRC_IMAGE);
+			throw new ImThumbNotFoundException("Could not read image metadata", ImThumb::ERR_SRC_IMAGE);
 		}
 		if ($this->fileSize > $generator->param('maxSize')) {
 			throw new ImThumbException("Image file exceeds maximum processable size", ImThumb::ERR_SRC_IMAGE);
