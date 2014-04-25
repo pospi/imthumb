@@ -63,6 +63,11 @@ class ImThumbCache
 		return $this->hasCache;
 	}
 
+	public function getDirectory()
+	{
+		return $this->baseDir;
+	}
+
 	//----------------
 
 	public function initCacheDir()
@@ -173,7 +178,7 @@ class ImThumbCache
 		return @filemtime($this->getCachePath($src));
 	}
 
-	protected function getCachePath(ImThumb $imageHandle)
+	public function getCachePath(ImThumb $imageHandle, $src = null)
 	{
 		$cacheDir = $this->baseDir;
 
@@ -181,7 +186,9 @@ class ImThumbCache
 			return false;
 		}
 
-		$src = $imageHandle->getSrc();
+		if (!$src) {
+			$src = $imageHandle->getSrc();
+		}
 
 		$extension = substr($src, strrpos($src, '.') + 1);
 
