@@ -758,9 +758,10 @@ class ImThumb
 		if ($limiter = $this->param('rateLimiter')) {
 			$limiter->setGenerator($this);
 			if (!$limiter->checkRateLimits()) {
-				throw new ImThumbCriticalException($this->param('rateExceededMessage'), ImThumb::ERR_RATE_EXCEEDED);
+				return false;
 			}
 		}
+		return true;
 	}
 }
 
