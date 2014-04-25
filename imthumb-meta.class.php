@@ -18,6 +18,10 @@ class ImThumbMeta
 		$this->mtime = $mtime;
 		$this->fileSize = $fileSize;
 		$this->mimeType = $mimeType;
+
+		if (!$src) {
+			$this->valid = false;
+		}
 	}
 
 	public function validateWith(ImThumb $generator)
