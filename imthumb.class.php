@@ -119,6 +119,17 @@ class ImThumb
 		return $this->meta->src;
 	}
 
+	/**
+	 * Forcibly set the source image for generation, even if it lies outside of the configured
+	 * base directory. Not to be connected in any way to user input as this is an obvious security point.
+	 * Primarily used by source handlers to override directory permissions when caching their assets elsewhere.
+	 */
+	public function forceSrc($filePath)
+	{
+		$this->param('src', $filePath);
+		$this->param('baseDir', dirname($filePath));
+	}
+
 	public function getImagick()
 	{
 		return $this->imageHandle;
@@ -181,6 +192,9 @@ class ImThumb
 			$src = $this->param('src');
 		}
 
+		// prep the cache
+		$cacheOk = $this->initCache();
+
 		// find appropriate handler for this image
 		if (!$this->determineImageSource($src)) {
 			// fallback to default source handling (local filesystem unless overridden)
@@ -188,10 +202,8 @@ class ImThumb
 		}
 
 		// read image metadata
-		$this->meta = $this->sourceHandler->readMetadata($src, $this);
-
-		// validate it to ensure processable
 		try {
+			$this->meta = $this->sourceHandler->readMetadata($src, $this);
 			$this->meta->validateWith($this);
 		} catch (ImThumbNotFoundException $e) {
 			$this->loadFallbackImage();
@@ -200,8 +212,7 @@ class ImThumb
 		}
 
 		// check the cache and flag for generation where necessary
-		$this->cache = null;
-		if ($this->initCache()) {
+		if ($cacheOk) {
 			// cache ftw. load it up
 			$this->cache->load($this);
 
