@@ -196,11 +196,9 @@ class ImThumb
 		$this->cache = null;
 		if ($this->initCache()) {
 			// cache ftw. load it up
-			// :TODO: cache should pass back same stuff as a source
 			$this->cache->load($this);
 
 			// check cache time against file time.
-			// :TODO: allow source handlers to specify (& track) minimal cache times in order to avoid latency on remote asset metadata checks
 			if ($this->meta->mtime > $this->cache->mtime) {
 				// if cache has been invalidated, flag it as empty so we regenerate on our next call to writeCache()
 				$this->cache->isCached(false);
