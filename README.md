@@ -23,7 +23,7 @@ I originally wrote this because I was attempting to optimise the quality of TimT
 
 The following additional features are provided by ImThumb in addition to baseline TimThumb functionality:
 
-* Direct cropping using explicit coordinates. The querystring parameter `cr` accepts four comma-delimited numbers indicating pixel positions to crop to: `startX`, `startY`, `endX` and `endY`. If any numbers are negative or outside the bounds of the image then the image will be positioned within a larger canvas containing itself. When combined with the normal `w`idth and `h`eight parameters, the resulting cropped image is reprocessed to fit within the target dimensions as it would normally be when passed to ImThumb pre-cropped.
+* Direct cropping using explicit coordinates.
 * Extended image filters from the ImageMagick library. For a full list, see [this manpage](http://www.php.net/manual/en/class.imagick.php#imagick.imagick.methods) under the heading "*Image effects*".
 * Support for drawing remote images from a variety of sources, [completely extensible](#custom-image-sources) to add your own custom sources (FTP, Amazon S3, databases etc). Included out of the box are:
 	* Remote HTTP images (of course)
@@ -89,9 +89,11 @@ You may optionally define these global PHP variables prior to including the `imt
 - `$ALLOWED_SITES` - a TimThumb configuration parameter. Specify an array of hostnames to whitelist. Subdomains are allowed as well.
 - `$IMAGE_SOURCE_HANDLERS` - an alternative to the above. Allows specifying an array of regexes to match passed paths on, mapping them to `ImThumbSource` handler classes. By way of example, translating the `$ALLOWED_SITES` array into ImThumb's source handlers parameter looks like this:
 
+~~~
 	foreach ($ALLOWED_SITES as $site) {
 		$uriWhitelist['@^https?://(\w|\.)*?\.?' . str_replace('.', '\\.', $site) . '@'] = 'ImThumbSource_HTTP';
 	}
+~~~
 
 ...you get the idea.
 
@@ -107,10 +109,12 @@ You may optionally define these global PHP variables prior to including the `imt
 
 Simply upload or clone ImThumb onto your server, create a `cache` directory in the same directory you unpack to and ensure the webserver has write access to it. If necessary you can also include a TimThumb compatible [configuration file](http://www.binarymoon.co.uk/2012/03/timthumb-configs/) in the same directory (see additional ImThumb constants above). Your filesystem should look something like this:
 
+~~~
 	[somedir]/
 		0775 cache/
 		0644 imthumb/
 		0644 timthumb-config.php
+~~~
 
 #### Parameters:
 
@@ -120,7 +124,7 @@ ImThumb takes the same parameters as TimThumb for the most part - these control 
 
 ###### Crop rect (`cr`)
 
-Crop rect coordinates for pre-cropping a portion of the source image (`[startx],[starty],[endx],[endy]`). If the resulting dimensions are the same as the specified width and height, the cropped area will be output untouched. Otherwise it will be pre-processed with the same cropping parameters as specified in the URL.
+Crop rect coordinates for pre-cropping a portion of the source image. Accepts four comma-delimited numbers indicating pixel positions to crop to: `startX`, `startY`, `endX` and `endY`. If any numbers are negative or outside the bounds of the image then the image will be positioned within a larger canvas containing itself. When combined with the normal `w`idth and `h`eight parameters, the resulting cropped image is reprocessed to fit within the target dimensions as it would normally be when passed to ImThumb pre-cropped.
 
 ###### Progressive JPEGS (`p`)
 
