@@ -29,6 +29,7 @@ abstract class ImThumbRequestHandler
 			$uriWhitelist = array();
 		}
 		if ($allowAllHTTP) {
+			$uriWhitelist['@^https?://(www\.)?youtube\.com.*?(\?|&)v=\w+(\W|$)@'] = 'ImThumbSource_YouTube';
 			$uriWhitelist['@^https?://@'] = 'ImThumbSource_HTTP';
 		} else if ($allowExternalHTTP) {
 			foreach ($ALLOWED_SITES as $site) {
