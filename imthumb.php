@@ -17,6 +17,10 @@
  * @since	2013-10-18
  */
 
+if (!defined('IMTHUMB_BASE')) {
+	define('IMTHUMB_BASE', dirname(__FILE__));
+}
+
 require_once('imthumb-requesthandler.class.php');
 require_once('imthumb-meta.class.php');
 require_once('imthumb-source.class.php');

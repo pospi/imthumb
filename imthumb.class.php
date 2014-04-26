@@ -7,6 +7,10 @@
  * @since	2013-10-18
  */
 
+if (!defined('IMTHUMB_BASE')) {
+	define('IMTHUMB_BASE', dirname(__FILE__));
+}
+
 class ImThumbException extends Exception {}
 class ImThumbCriticalException extends ImThumbException {}
 class ImThumbNotFoundException extends ImThumbException {}
@@ -472,7 +476,9 @@ class ImThumb
 
 	protected function runFilters($filters)
 	{
-		require_once(dirname(__FILE__) . '/imthumb-filters.php');
+		if (!class_exists('ImThumbFilters')) {
+			require_once(IMTHUMB_BASE . '/imthumb-filters.php');
+		}
 
 		$filterHandler = new ImThumbFilters($this->imageHandle);
 
@@ -659,7 +665,9 @@ class ImThumb
 			return false;
 		}
 
-		require_once(dirname(__FILE__) . '/imthumb-cache.class.php');
+		if (!class_exists('ImThumbCache')) {
+			require_once(IMTHUMB_BASE . '/imthumb-cache.class.php');
+		}
 
 		$this->cache = new ImThumbCache($cachePath, array(
 			'cacheCleanPeriod' => $this->param('cacheCleanPeriod'),
@@ -736,8 +744,8 @@ class ImThumb
 
 		$tryFile = '/imthumb-source-' . strtolower(str_replace('ImThumbSource_', '', $class)) . '.class.php';
 
-		if (file_exists(dirname(__FILE__) . $tryFile)) {
-			require_once(dirname(__FILE__) . $tryFile);
+		if (file_exists(IMTHUMB_BASE . $tryFile)) {
+			require_once(IMTHUMB_BASE . $tryFile);
 			return true;
 		}
 		if ($this->params['extraSourceHandlerPath'] && file_exists($this->params['extraSourceHandlerPath'] . $tryFile)) {

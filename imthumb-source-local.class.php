@@ -66,7 +66,9 @@ class ImThumbSource_Local implements ImThumbSource
 			return realpath($baseDir . '/' . $src);
 		}
 
-		require_once(dirname(__FILE__) . '/imthumb-requesthandler.class.php');
+		if (!class_exists('ImThumbRequestHandler')) {
+			require_once(IMTHUMB_BASE . '/imthumb-requesthandler.class.php');
+		}
 		return realpath(ImThumbRequestHandler::getDocRoot() . $src);
 	}
 }
