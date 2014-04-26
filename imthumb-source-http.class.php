@@ -5,10 +5,13 @@
  * @package ImThumb
  * @author  Sam Pospischil <pospi@spadgos.com>
  * @since	2014-04-03
- * @depends	ImThumbSource_Local
  */
 
-class ImThumbSource_HTTP implements ImThumbSource
+if (!class_exists('ImThumbSource_Local')) {
+	require_once(IMTHUMB_BASE . '/imthumb-source-local.class.php');
+}
+
+class ImThumbSource_HTTP extends ImThumbSource_Local
 {
 	// for size checking remote assets as they stream in
 	private static $curlDataWritten;
@@ -22,11 +25,10 @@ class ImThumbSource_HTTP implements ImThumbSource
 			return new ImThumbMeta();	// could not be read, return invalid metadata
 		}
 
-		// :SHONK: we update the path in the requestor so that it reads against the local file from here forwards
+		// :IMPORTANT: we update the path in the requestor so that it reads against the local file from here forwards
 		$requestor->forceSrc($localCacheFile);
 
-		$localProcessor = new ImThumbSource_Local();
-		return $localProcessor->readMetadata($localCacheFile, $requestor);
+		return parent::readMetadata($localCacheFile, $requestor);
 	}
 
 	public function readResource(ImThumbMeta $meta, ImThumb $requestor)
