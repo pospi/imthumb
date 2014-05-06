@@ -798,11 +798,16 @@ class ImThumb
 			}
 
 			$maxAge = $this->param('cacheMaxAge');
-			$files = glob($this->param('cache') . '/*' . $this->param('cacheSuffix'));
+			$files = glob($this->param('cache') . '/*' . ($this->param('cacheFilenameFormat') ? '' : $this->param('cacheSuffix')));
 
 			if ($files) {
 				$timeAgo = time() - $maxAge;
 				foreach ($files as $file) {
+					$bn = basename($file);
+					if ($bn == 'index.html' || $bn == 'timthumb_cacheLastCleanTime.touch') {
+						continue;
+					}
+
 					if (@filemtime($file) < $timeAgo) {
 						@unlink($file);
 					}
