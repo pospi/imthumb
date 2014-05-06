@@ -798,7 +798,7 @@ class ImThumb
 			}
 
 			$maxAge = $this->param('cacheMaxAge');
-			$files = glob($this->cacheDirectory . '/*' . $this->param('cacheSuffix'));
+			$files = glob($this->param('cache') . '/*' . $this->param('cacheSuffix'));
 
 			if ($files) {
 				$timeAgo = time() - $maxAge;
