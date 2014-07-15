@@ -17,7 +17,8 @@ abstract class ImThumbRequestHandler
 	 */
 	public static function readParams()
 	{
-		global $ALLOWED_SITES, $IMAGE_SOURCE_HANDLERS;
+		$ALLOWED_SITES = isset(self::$TIMTHUMB_ENV['ALLOWED_SITES']) ? self::$TIMTHUMB_ENV['ALLOWED_SITES'] : array();
+		$IMAGE_SOURCE_HANDLERS = isset(self::$TIMTHUMB_ENV['IMAGE_SOURCE_HANDLERS']) ? self::$TIMTHUMB_ENV['IMAGE_SOURCE_HANDLERS'] : null;
 
 		$allowExternalHTTP = self::readConst('ALLOW_EXTERNAL', false);
 		$allowAllHTTP = self::readConst('ALLOW_ALL_EXTERNAL_SITES', false);
@@ -235,6 +236,8 @@ abstract class ImThumbRequestHandler
 
 	//--------------------------------------------------------------------------
 
+	private static $TIMTHUMB_ENV = array();
+
 	// attempts to find and load TimThumb config files and set defaults. Looks in CWD and parent dir.
 	// @see http://www.binarymoon.co.uk/2012/03/timthumb-configs/
 	public static function readTimThumbConfig($basePath = null)
@@ -245,12 +248,14 @@ abstract class ImThumbRequestHandler
 
 		if (file_exists($basePath . '/timthumb-config.php'))	{
 			require_once($basePath . '/timthumb-config.php');
+			self::$TIMTHUMB_ENV = get_defined_vars();
 			return true;
 		}
 
 		$basePath = dirname($basePath);
 		if (file_exists($basePath . '/timthumb-config.php'))	{
 			require_once($basePath . '/timthumb-config.php');
+			self::$TIMTHUMB_ENV = get_defined_vars();
 			return true;
 		}
 
