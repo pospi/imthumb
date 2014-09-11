@@ -49,6 +49,7 @@ abstract class ImThumbRequestHandler
 			'sharpen' => self::readParam('s', self::readConst('DEFAULT_S', 0)),
 			'canvasColor' => self::readParam('cc', self::readConst('DEFAULT_CC', 'ffffff')),
 			'canvasTransparent' => (bool)self::readParam('ct', true),
+			'upscale' => (bool)self::readParam('up', !self::readConst('DISABLE_UPSCALING', false)),
 
 			'cropRect' => self::readParam('cr', null),
 

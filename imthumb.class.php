@@ -396,6 +396,16 @@ class ImThumb
 	{
 		list($width, $height, $new_width, $new_height) = $this->getSourceAndTargetDims($new_width, $new_height);
 
+		// check for upscaling
+		if (!$this->param('upscale')) {
+			if ($width < $new_width) {
+				$new_width = $width;
+			}
+			if ($height < $new_height) {
+				$new_height = $height;
+			}
+		}
+
 		if ($width == $new_width && $height == $new_height) {
 			// already the correct size
 			return;

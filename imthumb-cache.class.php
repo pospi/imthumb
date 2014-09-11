@@ -209,6 +209,7 @@ class ImThumbCache
 				'%cr%',
 				'%filters%',
 				'%pjpg%',
+				'%upscale%',
 			), array(
 				basename($src, '.' . $extension),
 				$extension,
@@ -223,6 +224,7 @@ class ImThumbCache
 				$imageHandle->param('cropRect'),
 				$imageHandle->param('filters'),
 				$imageHandle->param('jpgProgressive') ? 'p' : '',
+				$imageHandle->param('upscale') ? '' : 'nu',
 			), $this->cacheFilenameFormat);
 		}
 
