@@ -31,6 +31,7 @@ The following additional features are provided by ImThumb in addition to baselin
 	* Rendering of [remote webpages](#configuring-webpage-rendering) (via integration with [phantomjs](http://http://phantomjs.org))
 * Support for [custom rate limiting](#implementing-rate-limiting).
 * Progressive JPEG encoding for better image load experience. Can be disabled by passing `p=0` to the script.
+* A new URL flag and configuration constant to disable upscaling of source images.
 * Ability to specify image cache filenames based on attributes of the image. This allows generation of image files directly usable by external services and applications.
 
 
@@ -74,6 +75,7 @@ As with TimThumb, configuration is managed by constants defined in a config file
 ##### Additional constants:
 
 * `DEFAULT_PROGRESSIVE_JPEG` - set to `false` to show standard JPEGs by default, without specifying the query argument each time.
+* `DISABLE_UPSCALING` - set to `true` to disable image upscaling by default.
 * `SKIP_IMTHUMB_HEADERS` - set to `false` to prevent `X-Generator` and `X-Img-Cache` headers being sent. Setting `SHOW_DEBUG_STATS` to `true` will enable output of timing and load stats in extended headers.
 * By default, ImThumb will always render an image if an error occurs, even if no fallbacks are configured. Due to the difference, some additional constants may be used:
 	* `ENABLE_NOT_FOUND_IMAGE` and `ENABLE_ERROR_IMAGE` can be set to `false` to restore plaintext error output and default TimThumb functionality. Broken images will appear as broken X's on your pages.
@@ -129,6 +131,10 @@ Crop rect coordinates for pre-cropping a portion of the source image. Accepts fo
 ###### Progressive JPEGS (`p`)
 
 Specifies whether (`=1`) or not (`=0`) to save progressive JPEGs. ImThumb saves progressive images by default to increase apparent loading time for the end user. Filesize is not significantly affected either way.
+
+###### Upscaling control (`up`)
+
+Specifies whether images should be upscaled when passed dimensions are larger than the original image size. By default this is enabled, but can be disabled globally with the `DISABLE_UPSCALING` configuration constant. When using a manual crop step (`cr`), this parameter applies to the scaling applied after the initial crop is applied.
 
 #### Extended parameters:
 
