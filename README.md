@@ -103,6 +103,15 @@ You may optionally define these global PHP variables prior to including the `imt
 
 * TimThumb's `DEBUG_ON` and `DEBUG_LEVEL` constants have no effect in ImThumb. The library is designed to use exception handling to handle error conditions and log automatically.
 
+##### Setting up URL rewrites:
+
+One of the issues with serving images from scripts is the filename the browser will choose when saving them. As such you'll generally want to configure your webserver to make the image paths appear 'real' to the outside word so that you're not saving down `imthumb.php.jpg` every single time. The following rewrite patterns will accomplish that easily, assuming ImThumb is stored in `lib/imthumb`:
+
+- For Apache: `RewriteRule  ^images/(.*)$  lib/imthumb/imthumb.php?src=$1	[QSA,L]`
+- For nginx: `rewrite  ^/images/(.*)$  lib/imthumb/imthumb.php?src=$1&$args last;`
+
+You could easily extend these matches to include dimensions or other distinguishing information in the filenames if need be, that is left as an exercise to the reader.
+
 
 
 
