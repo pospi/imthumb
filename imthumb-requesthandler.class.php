@@ -34,7 +34,7 @@ abstract class ImThumbRequestHandler
 			$uriWhitelist['@^https?://@'] = 'ImThumbSource_HTTP';
 		} else if ($allowExternalHTTP) {
 			foreach ($ALLOWED_SITES as $site) {
-				$uriWhitelist['@^https?://(\w|\.)*?\.?' . str_replace('.', '\\.', $site) . '@'] = 'ImThumbSource_HTTP';
+				$uriWhitelist['@^https?://(\w|\.)*?\.?' . preg_quote($site, '@') . '@'] = 'ImThumbSource_HTTP';
 			}
 		}
 
