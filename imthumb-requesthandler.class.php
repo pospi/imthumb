@@ -22,6 +22,7 @@ abstract class ImThumbRequestHandler
 
 		$allowExternalHTTP = self::readConst('ALLOW_EXTERNAL', false);
 		$allowAllHTTP = self::readConst('ALLOW_ALL_EXTERNAL_SITES', false);
+		$interceptSingleSlashProtocols = self::readConst('FIX_ABSOLUTE_URLS_IN_REQUEST', false);
 
 		// image source handlers: process global TimThumb variables and convert to our regex-based format for URL matching
 		if ($IMAGE_SOURCE_HANDLERS) {
@@ -40,7 +41,7 @@ abstract class ImThumbRequestHandler
 
 		// build params for the class
 		return array(
-			'src' => self::readParam('src'),
+			'src' => ($interceptSingleSlashProtocols ? preg_replace('@^(\w+):/([^/])@', '$1://$2', self::readParam('src')) : self::readParam('src')),
 			'width' => self::readParam('w', null),
 			'height' => self::readParam('h', null),
 			'quality' => self::readParam('q', self::readConst('DEFAULT_Q', 90)),
