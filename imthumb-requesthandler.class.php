@@ -110,24 +110,24 @@ abstract class ImThumbRequestHandler
 			}
 		}
 
-		try {
-			// load up the configured rate limiter class, if any
-			if (!empty($params['rateLimiter'])) {
-				$limiter = $params['rateLimiter'];
+		// load up the configured rate limiter class, if any
+		if (!empty($params['rateLimiter'])) {
+			$limiter = $params['rateLimiter'];
 
-				// if the configured class does not exist, this is a hack attempt and someone is hitting the imthumb.php script directly to bypass rate limiting
-				if (!class_exists($limiter)) {
-					$remoteIPString = isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : (
-						isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '')
-					);
-					throw new ImThumbCriticalException("Rate limiter class not found, hack attempt! Source {$remoteIPString}", ImThumb::ERR_HACK_ATTEMPT);
-				}
-
-				$params['rateLimiter'] = new $limiter();
+			// if the configured class does not exist, this is a hack attempt and someone is hitting the imthumb.php script directly to bypass rate limiting
+			if (!class_exists($limiter)) {
+				$remoteIPString = isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : (
+					isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '')
+				);
+				throw new ImThumbCriticalException("Rate limiter class not found, hack attempt! Source {$remoteIPString}", ImThumb::ERR_HACK_ATTEMPT);
 			}
-			$handler = new ImThumb($params);
-			$http = new ImThumbHTTP($handler, $params);
 
+			$params['rateLimiter'] = new $limiter();
+		}
+		$handler = new ImThumb($params);
+		$http = new ImThumbHTTP($handler, $params);
+
+		try {
 			// check for referrer
 			if (!$params['externalReferrerAllowed'] && !self::isReferrerOk()) {
 				self::quickImageResponse('leeching');
