@@ -83,6 +83,7 @@ As with TimThumb, configuration is managed by constants defined in a config file
 * `FILE_CACHE_FILENAME_FORMAT` - use this option to specify a format string for writing files to the cache. This can be used for example to permanently generate images for use by other services or in backups. The wildcard format it takes can include any of the following: `%filename%-%w%x%h%x%q%-%zc%%a%%s%%cc%%ct%%filters%%pjpg%.%ext%`, but you need not include all parameters if you will not be using them all.
 * `IMTHUMB_RATE_LIMITER` - defines the name of a loaded class to be instantiated for controlling [rate limiting](#implementing-rate-limiting).
 * `EXTRA_SOURCE_HANDLERS_PATH` - allows you to define an extra include path for image source loader classes. This gives advanced users the ability to pull images directly out of a database, CDN storage bucket or whatever other implementation you could think of.
+* `FIX_ABSOLUTE_URLS_IN_REQUEST` - sometimes, you want to do complex rewrites and have external URLs as part of your local ones in the path component. Apache will coerce your protocol's double-slash to a single one and then fail to redirect properly in this case - if this affects you then you can enable this constant to workaround it by changing any `scheme:/` in source URLs to the correct `scheme://`.
 
 ##### Configuration globals:
 
