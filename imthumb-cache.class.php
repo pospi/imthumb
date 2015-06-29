@@ -228,6 +228,6 @@ class ImThumbCache
 			), $this->cacheFilenameFormat);
 		}
 
-		return $cacheDir . '/' . $this->cachePrefix . md5($this->cacheSalt . implode('', $imageHandle->params()) . ImThumb::VERSION) . $this->cacheSuffix;
+		return $cacheDir . '/' . $this->cachePrefix . md5($this->cacheSalt . json_encode($imageHandle->params()) . ImThumb::VERSION) . $this->cacheSuffix;
 	}
 }
