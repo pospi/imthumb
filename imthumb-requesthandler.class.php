@@ -39,6 +39,14 @@ abstract class ImThumbRequestHandler
 			}
 		}
 
+		// mimic TimThumb sharp mask if bool or int, give direct control if float
+		$sharpenVal = self::readParam('s', self::readConst('DEFAULT_S', 0));
+		if (strpos($sharpenVal, '.') !== false) {
+			$sharpenVal = (float)$sharpenVal;
+		} else {
+			$sharpenVal = (int)$sharpenVal;
+		}
+
 		// build params for the class
 		return array(
 			'src' => ($interceptSingleSlashProtocols ? preg_replace('@^(\w+):/([^/])@', '$1://$2', self::readParam('src')) : self::readParam('src')),
@@ -47,7 +55,7 @@ abstract class ImThumbRequestHandler
 			'quality' => self::readParam('q', self::readConst('DEFAULT_Q', 90)),
 			'align' => self::readParam('a', 'c'),
 			'cropMode' => self::readParam('zc', self::readConst('DEFAULT_ZC', 1)),
-			'sharpen' => self::readParam('s', self::readConst('DEFAULT_S', 0)),
+			'sharpen' => $sharpenVal,
 			'canvasColor' => self::readParam('cc', self::readConst('DEFAULT_CC', 'ffffff')),
 			'canvasTransparent' => (bool)self::readParam('ct', true),
 			'upscale' => (bool)self::readParam('up', !self::readConst('DISABLE_UPSCALING', false)),

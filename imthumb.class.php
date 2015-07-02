@@ -348,12 +348,12 @@ class ImThumb
 			@list($startX, $startY, $endX, $endY) = explode(',', $this->param('cropRect'));
 			$this->processResizeCrop($new_width, $new_height, $startX, $startY, $endX, $endY,
 									(int)$this->param('cropMode'), $this->param('align'),
-									(bool)$this->param('sharpen'), $canvas_trans, $canvas_color);
+									$this->param('sharpen'), $canvas_trans, $canvas_color);
 		} else {
 			// TimThumb style simplified crop operation
 			$this->processZoomCrop($new_width, $new_height,
 									(int)$this->param('cropMode'), $this->param('align'),
-									(bool)$this->param('sharpen'), $canvas_trans, $canvas_color);
+									$this->param('sharpen'), $canvas_trans, $canvas_color);
 		}
 
 		// process any configured image filters
@@ -392,7 +392,7 @@ class ImThumb
 		return $canvas;
 	}
 
-	protected function processZoomCrop($new_width, $new_height, $zoom_crop = 3, $align = 'c', $sharpen = false, $canvas_trans = true, $canvas_color = 'ffffff')
+	protected function processZoomCrop($new_width, $new_height, $zoom_crop = 3, $align = 'c', $sharpen = 0, $canvas_trans = true, $canvas_color = 'ffffff')
 	{
 		list($width, $height, $new_width, $new_height) = $this->getSourceAndTargetDims($new_width, $new_height);
 
@@ -411,15 +411,18 @@ class ImThumb
 			return;
 		}
 
+		// mimic TimThumb sharp mask if bool or int, give direct control if float
+		$sharpen = is_float($sharpen) ? $sharpen : ($sharpen ? 0.7 : 1);
+
 		// perform requested cropping
 		switch ($zoom_crop) {
 			case 3:		// inner-fit
 				$new_width = min($new_width, $width);
 				$new_height = min($new_height, $height);
-				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen, true);
 				break;
 			case 2:		// inner-fill
-				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1, true);
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen, true);
 
 				$canvas = $this->generateNewCanvas($new_width, $new_height, $canvas_trans ? null : $canvas_color, $this->meta->mimeType);
 
@@ -440,19 +443,19 @@ class ImThumb
 				$tempW = $width * $ratio;
 				$tempH = $height * $ratio;
 
-				$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
+				$this->imageHandle->resizeImage($tempW, $tempH, Imagick::FILTER_LANCZOS, $sharpen);
 
 				list($x, $y) = $this->getCropCoords($align, $tempW, $tempH, $new_width, $new_height);
 
 				$this->imageHandle->cropImage($new_width, $new_height, $x, $y);
 				break;
 			default:	// exact dimensions
-				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen ? 0.7 : 1);
+				$this->imageHandle->resizeImage($new_width, $new_height, Imagick::FILTER_LANCZOS, $sharpen);
 				break;
 		}
 	}
 
-	protected function processResizeCrop($new_width, $new_height, $startX, $startY, $endX, $endY, $zoom_crop = 3, $align = 'c', $sharpen = false, $canvas_trans = true, $canvas_color = 'ffffff')
+	protected function processResizeCrop($new_width, $new_height, $startX, $startY, $endX, $endY, $zoom_crop = 3, $align = 'c', $sharpen = 0, $canvas_trans = true, $canvas_color = 'ffffff')
 	{
 		list($width, $height, $new_width, $new_height) = $this->getSourceAndTargetDims($new_width, $new_height);
 
