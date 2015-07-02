@@ -36,7 +36,7 @@ class ImThumbSessionRateLimiter extends ImThumbRateLimiter
 		}
 
 		// begin session
-		session_start('ithdemo');
+		session_start();
 
 		if (!isset($_SESSION['requestcount'])) {
 			$_SESSION['requestcount'] = 0;
