@@ -70,8 +70,13 @@ class ImThumbHTTP
 
 		// informational headers
 		if (!$this->image->param('silent')) {
-			$imVer = Imagick::getVersion();
-			header('X-Generator: ImThumb v' . ImThumb::VERSION . '; ' . $imVer['versionString']);
+			if (!$imHandle = $this->image->getImagick()) {
+				$imHandle = new Imagick();
+			}
+			$imVer = $imHandle->getVersion();
+			$imVer = $imVer['versionString'];
+
+			header('X-Generator: ImThumb v' . ImThumb::VERSION . '; ' . $imVer);
 
 			if ($this->image->cache && $this->image->cache->isCached()) {
 				header('X-Img-Cache: HIT');
